@@ -1,0 +1,7 @@
+default:
+  image: gcc
+  before_script:
+
+build:
+  script:
+    - echo SuCcEsS
