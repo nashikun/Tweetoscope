@@ -18,5 +18,7 @@ link_libraries(${CPPKAFKA_LIBRARIES} pthread)
 include_directories(${CPPKAFKA_INCLUDE_DIRS} ${GAML_INCLUDE_DIRS})
 
 add_subdirectory(src)
-file(COPY config DESTINATION config)
+file(COPY config DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY data DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
 
