@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iterator>
 #include <cppkafka/cppkafka.h>
+#include <string>
 #include "tweetoscopeGenerator.hpp"
 
 // This is the actual definition of the static attribute in tweetoscope::EventBase class.
@@ -16,16 +17,25 @@
 std::atomic<unsigned int> tweetoscope::EventBase::next_free_idf = 0;
 
 int main(int argc, char* argv[]) {
-  if(argc != 2) {
+  if(argc > 2) {
     std::cout << "Usage : " << argv[0] << " params_file" << std::endl;
     return 0;
   }
+  
+  std::string param_path;
+  if(argc == 2) {
+      param_path = argv[1];
+  }
+  else {
+    std::cout << "Using default config path: config/params.config";
+    param_path = "config/params.config";
+  }
 
   // random seed initialization
+  tweetoscope::Params params(param_path);
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  tweetoscope::Params params(argv[1]);
   std::cout << params << std::endl
 	    << std::endl
 	    << std::endl;
