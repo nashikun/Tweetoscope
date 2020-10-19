@@ -100,13 +100,22 @@ done
 case $ACTION in 
     start)
 	if [ -z $ZOOKEEPER_CONFIG ]; then
-	    display_error "You must provide a zookeeper config with the --zooconfig option"
-	    exit -1
+        ZOOKEEPER_CONFIG="config/zookeeper.properties"
+        echo "default zookeeper config used: ${ZOOKEEPER_CONFIG}"
 	fi
+    if [ ! -f $ZOOKEEPER_CONFIG ]; then
+        display_error "Zookeeper config not found. Plese specify a correct config with the --zooconfig option"
+        exit -1
+    fi
+
 	if [ -z $SERVER_CONFIG ]; then
-	    display_error "You must provide a server config with the --serverconfig option"	
-	    exit -1
+        SERVER_CONFIG="config/server.properties"
+        echo "default server config used: ${SERVER_CONFIG}"
 	fi
+    if [ ! -f $SERVER_CONFIG ]; then
+        display_error "Server config not found. Plese specify a correct config with the --serverconfig option"
+        exit -1
+    fi
 
 	run_command "Starting the zookeeper server" "$KAFKA_PATH/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONFIG" "sleep 2"
 
