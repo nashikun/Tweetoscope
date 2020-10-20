@@ -1,7 +1,30 @@
-default:
-  image: gcc
-  before_script:
+stages:
+  - build
+  - test
+  - deploy
 
 build:
+  stage: build
+  tags:
+    - docker
+  image: nashimo/tweetoscope:latest
   script:
-    - echo SuCcEsS
+    - apt-get update
+    - apt-get install cmake -y
+    - mkdir build
+    - cd build; cmake ..; make
+
+test:
+  stage: test
+  tags:
+    - docker
+  image: nashimo/tweetoscope:latest
+  script:
+    - pip3 install -r requirements.txt
+    - python3 -m unittest test
+
+deploy:
+  stage: deploy
+  tags:
+  script:
+    - echo sUcCeSs
