@@ -1,16 +1,43 @@
+before_script:
+  - echo $CI_PROJECT_NAME
+  - echo $CI_PROJECT_NAMESPACE
+  - echo $CI_REGISTRY
+  - echo $CI_REGISTRY_IMAGE
+  - echo $CI_REGISTRY_USER
+
 stages:
+  - dockerbuild
   - build
   - test
   - deploy
-
-build:
-  stage: build
+    
+dockerbuild:
   tags:
     - docker
-  image: nashimo/tweetoscope:latest
+  only:
+    changes:
+      - requirements.txt
+      - Dockerfile
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - apt-get update
-    - apt-get install cmake -y
+    - docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+    - docker build --cache-from $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH --cache-from $CI_REGISTRY_IMAGE:master . > docker-build.log
+    - docker push $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+  artifacts:
+    paths:
+      - docker-build.log
+    expire_in: 1 week
+
+build:
+  tags:
+    - docker
+  image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+  script: 
     - mkdir build
     - cd build; cmake ..; make
 
@@ -18,13 +45,15 @@ test:
   stage: test
   tags:
     - docker
-  image: nashimo/tweetoscope:latest
+  image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
   script:
-    - pip3 install -r requirements.txt
     - python3 -m unittest test
 
 deploy:
+  only:
+    - master 
   stage: deploy
   tags:
+    - docker
   script:
-    - echo sUcCeSs
+    - echo sucess

@@ -15,3 +15,6 @@ RUN cd boost_1_74_0 && ./bootstrap.sh && ./b2 --prefix=/usr/lib
 RUN cd gaml; mkdir -p gaml/build; cd gaml/build; cmake .. -DCMAKE_INSTALL_PREFIX=/usr; make -j; make install
 RUN rm boost_1_74_0.tar.gz kafka_2.13-2.6.0.tgz
 RUN cd cppkafka; mkdir build; cd build; cmake ..; make; make install
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
