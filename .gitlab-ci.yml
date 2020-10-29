@@ -4,6 +4,7 @@ before_script:
   - echo $CI_REGISTRY
   - echo $CI_REGISTRY_IMAGE
   - echo $CI_REGISTRY_USER
+  - echo $CI_DEFAULT_BRANCH
 
 stages:
   - dockerbuild
@@ -18,6 +19,7 @@ dockerbuild:
     changes:
       - requirements.txt
       - Dockerfile
+      - .gitlab-ci.yml 
   image: docker:latest
   stage: build
   services:
@@ -25,8 +27,8 @@ dockerbuild:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
-    - docker build --cache-from $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH --cache-from $CI_REGISTRY_IMAGE:master . > docker-build.log
+    - if [[ $(curl --silent -f -lSL https://hub.docker.com/v2/repositories/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tags/$CI_COMMIT_BRANCH 2>&1 > /dev/null) ]]; then docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_DEFAULT_BRANCH; else docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH ; fi 
+    - docker build --cache-from $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH --cache-from $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_DEFAULT_BRANCH . > docker-build.log
     - docker push $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
   artifacts:
     paths:
