@@ -15,27 +15,21 @@ stages:
 dockerbuild:
   tags:
     - docker
-  only:
-    changes:
-      - requirements.txt
-      - Dockerfile
-      - .gitlab-ci.yml 
   image: docker:latest
-  stage: build
+  stage: dockerbuild
   services:
     - docker:dind
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - if [[ $(curl --silent -f -lSL https://hub.docker.com/v2/repositories/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tags/$CI_COMMIT_BRANCH 2>&1 > /dev/null) ]]; then docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_DEFAULT_BRANCH; else docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH ; fi 
-    - docker build --cache-from $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH --cache-from $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_DEFAULT_BRANCH . > docker-build.log
-    - docker push $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+    - ./scripts/dockerbuild.sh
   artifacts:
     paths:
       - docker-build.log
     expire_in: 1 week
 
 build:
+  stage: build
   tags:
     - docker
   image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
@@ -58,4 +52,4 @@ deploy:
   tags:
     - docker
   script:
-    - echo sucess
+    - echo SuCcEsS

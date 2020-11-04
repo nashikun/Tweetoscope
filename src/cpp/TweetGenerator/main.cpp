@@ -10,7 +10,7 @@
 #include <iterator>
 #include <cppkafka/cppkafka.h>
 #include <string>
-#include "tweetoscopeGenerator.hpp"
+#include "TweetGenerator.hpp"
 
 // This is the actual definition of the static attribute in tweetoscope::EventBase class.
 // This is a thread-safe global variable.
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
       param_path = argv[1];
   }
   else {
-    std::cout << "Using default config path: config/params.config";
+    std::cout << "Using default config path: config/params.config" << std::endl;
     param_path = "config/params.config";
   }
 
