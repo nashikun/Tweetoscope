@@ -1,1 +1,2 @@
-add_subdirectory(tweetgenerator)
+add_subdirectory(TweetGenerator)
+add_subdirectory(TweetCollector)
