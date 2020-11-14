@@ -16,6 +16,8 @@
 #include <vector>
 #include <cstddef>
 #include <stdexcept>
+#include <time.h>
+#include <stdlib.h>
 #include <cppkafka/cppkafka.h>
 
 namespace tweetoscope
@@ -34,11 +36,12 @@ namespace tweetoscope
                 std::string brokers;
                 std::string group;
                 std::string offset_reset;
+                bool connection;
             };
 
             struct Topic
             {
-                std::string in, out_series, out_properties;
+                std::string in, out_series, out_properties, timeout;
             };
 
             struct Times
@@ -82,15 +85,16 @@ namespace tweetoscope
                 }
 
             public:
-
-                section::Kafka   kafka;
-                section::Topic   topic;
-                section::Times   times;
+                section::Kafka kafka;
+                section::Topic topic;
+                section::Times times;
                 section::Cascade cascade;
 
-                collector(const std::string& config_filename)
+                collector(const std::string& config_filename, bool randomize=false)
                 {
                     std::ifstream ifs(config_filename.c_str());
+                    srand (time(NULL));
+                    std::string suffix = randomize? "_" + std::to_string(rand()) : "";
                     if(!ifs)
                         throw std::runtime_error(std::string("Cannot open \"") + config_filename + "\" for reading parameters.");
                     ifs.exceptions(std::ios::failbit | std::ios::badbit | std::ios::eofbit);
@@ -104,12 +108,14 @@ namespace tweetoscope
                                 if(key == "brokers") kafka.brokers = val;
                                 else if(key == "group") kafka.group = val;
                                 else if(key == "offset_reset") kafka.offset_reset = val;
+                                else if(key == "connection") kafka.connection = val == "true" ? true : false;
                             }
                             else if(current_section == "topic")
                             {
-                                if     (key == "in")             topic.in             = val;
-                                else if(key == "out_series")     topic.out_series     = val;
-                                else if(key == "out_properties") topic.out_properties = val;
+                                if     (key == "in")             topic.in             = val + suffix;
+                                else if(key == "out_series")     topic.out_series     = val + suffix;
+                                else if(key == "out_properties") topic.out_properties = val + suffix;
+                                else if(key == "timeout") topic.timeout = val;
                             }
                             else if(current_section == "times")
                             {
@@ -138,6 +144,7 @@ namespace tweetoscope
                 << "  in=" << c.topic.in << std::endl
                 << "  out_series=" << c.topic.out_series << std::endl
                 << "  out_properties=" << c.topic.out_properties << std::endl
+                << "  timeout=" << c.topic.timeout << std::endl
                 << std::endl
                 << "[times]" << std::endl;
             for(auto& o : c.times.observation)

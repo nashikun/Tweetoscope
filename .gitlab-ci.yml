@@ -32,6 +32,9 @@ build:
   stage: build
   tags:
     - docker
+  artifacts:
+    paths:
+      - build/
   image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
   script: 
     - mkdir build
@@ -39,11 +42,18 @@ build:
 
 test:
   stage: test
+  dependencies:
+  - build
   tags:
     - docker
   image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
   script:
-    - python3 -m unittest test
+    - echo "Running the python tests"
+    - python3 -m unittest tests
+    # echo "Running the C++ tests"
+    # ./build/scripts/kafka.sh start
+    # run-parts --regex '.*Test' build/tests/cpp/
+    # ./build/scripts/kafka.sh stop
 
 deploy:
   only:

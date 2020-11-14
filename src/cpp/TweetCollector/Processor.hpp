@@ -1,14 +1,18 @@
 #pragma once
 
+#include <c++/7/bits/c++config.h>
 #include <cppkafka/message.h>
 #include <memory>
 #include <map>
 #include <cppkafka/cppkafka.h>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #include <boost/heap/binomial_heap.hpp>
 
 #include "TweetStreams.hpp"
+#include "TweetCollectorParams.hpp"
+#include "../Producer.hpp"
 
 namespace processor
 {
@@ -28,9 +32,10 @@ namespace processor
     class Cascade
     {
         public:
-            Cascade(tweetoscope::cascade::idf key, const tweetoscope::tweet& twt) : msg(twt.msg), info(twt.info), key(key) 
-            {
-            }
+            Cascade(const tweetoscope::cascade::idf key, const tweetoscope::tweet& twt,
+                    const tweetoscope::observations* observation, kafka::TweetProducer* producer)
+                : msg(twt.msg), info(twt.info), key(std::to_string(key)), producer(producer), observation(observation)
+            {}
 
             void add_tweet(const tweetoscope::tweet& twt)
             {
@@ -39,33 +44,51 @@ namespace processor
                 magnitudes.push_back({twt.time, twt.magnitude});
             }
 
-            const tweetoscope::timestamp& first_time() const noexcept
-            {
-                return first_ts;
-            }
+            const tweetoscope::timestamp& first_time() const noexcept {return first_ts;}
 
-            const tweetoscope::timestamp& last_time() const noexcept
+            const tweetoscope::timestamp& last_time() const noexcept {return last_ts;}
+
+            void partial(tweetoscope::timestamp ts) const noexcept
             {
-                return last_ts;
+                std::ostringstream os;
+
+                os << "{\'type\' : "  << "\'serie\'"   << " , "
+                   << "\'cid\' : "    << key         << " , "
+                   << "\'msg\' : "    << msg         << " , "
+                   << "\'T_obs\' : "  << ts << " , "
+                   << "\'tweets\' : [";
+                
+                for(auto ptr = magnitudes.begin(); ptr != magnitudes.end(); ++ptr)
+                {
+                    os << "(" << ptr->first << ", " << ptr->second << ")";
+                    if(ptr != magnitudes.end() - 1) os << ", "; 
+                }
+                os << "]}";
+                producer->send_message(partial_topic, os.str(), key);
             }
 
             void terminate() const noexcept
             {
-                std::cout << "key :" << key << " termination" << std::endl; 
-            }
-
-            void partial(tweetoscope::timestamp ts) const noexcept
-            {
-                std::cout << "key :" << key << " partial: " << ts << std::endl; 
+                std::ostringstream os;
+                os << "{\'type\' : "  << "\'size\'"    << " , "
+                    << "\'cid\' : "    << key         << " , "
+                    << "\'n_tot\' : "  << magnitudes.size() << " , "
+                    << "\'t_end\' : "  << last_ts << "}";
+                
+                for(auto& obs : *observation) producer->send_message(terminated_topic, os.str(), key);
             }
 
         public:
             cascade_queue::handle_type location;
-            tweetoscope::cascade::idf key;
+            const std::string key;
+            inline static std::string partial_topic{};
+            inline static std::string terminated_topic{};
 
         private:
-            std::string msg;
-            std::string info;
+            const std::string msg;
+            const std::string info;
+            const tweetoscope::observations* observation;
+            kafka::TweetProducer* producer;
             bool terminated{false};
             tweetoscope::timestamp last_ts{0};
             tweetoscope::timestamp first_ts{0};
@@ -80,67 +103,73 @@ namespace processor
     struct Processor
     {
 
-        Processor(int termination, tweetoscope::observations observation): termination(termination), observation(observation)
+        Processor(const int termination, const tweetoscope::observations* observation, kafka::TweetProducer* producer): termination(termination), 
+            observation(observation), producer(producer)
         {
-            for(auto obs: observation)
+            for(const auto& obs: *observation)
             {
                 partial_cascades.insert({obs, {}});
             }
         }
 
-        void operator()(const tweetoscope::cascade::idf key, tweetoscope::tweet&& tweet)
+        void operator()(const tweetoscope::cascade::idf key, tweetoscope::tweet&& twt)
         {
-            auto twt = std::move(tweet);
-            while(!queue.empty() && queue.top()->last_time() < twt.time - termination)
-            {
-                ref r = queue.top();
-                queue.pop();
-                r->terminate();
-            } 
-
-            ref r = std::make_shared<Cascade>(key, twt);
+            ref r = std::make_shared<Cascade>(key, twt, observation, producer);
             auto [it, inserted] = symbols.insert(std::make_pair(key, r));
-            if(inserted)
-            {
-                r->location = queue.push(r);
-            }
-
             for(auto& [ts, cascades]: partial_cascades)
             {
-                while(cascades.size() && cascades.front()->first_time() < twt.time - ts)
+                while(cascades.size())
                 {
-                    ref r = cascades.front();
-                    cascades.pop();
-                    r->partial(ts);
+                    if(auto sp = cascades.front().lock())
+                    {
+                        if(sp->first_time() + ts < twt.time) 
+                        {
+                            sp->partial(ts);
+                            cascades.pop();
+                        }
+                        else break;
+                    }
+                    else
+                    {
+                        cascades.pop();
+                    }
                 }
-                if(inserted)
-                {
-                    cascades.push(r);
-                    std::cout << "inserted: " << key << " size: " << cascades.size() << std::endl;
-                }
+                if(inserted) cascades.push(r);
             }
+
+            while(!queue.empty() && queue.top()->last_time() + termination < twt.time)
+            {
+                auto c = queue.top();
+                queue.pop();
+                c->terminate();
+            } 
+            if(inserted) r->location = queue.push(r);
 
             if(auto sp = it->second.lock()) 
             {
                 sp->add_tweet(twt);
                 queue.update(sp->location);
             }
-
-            std::cout << "===================================================" << std::endl;
         }
 
-        int termination;
-        tweetoscope::observations observation;
-        cascade_queue queue;
-        std::unordered_map<tweetoscope::cascade::idf, std::weak_ptr<Cascade>> symbols;
-        std::unordered_map<tweetoscope::timestamp, std::queue<ref>> partial_cascades;
+        private:
+            int termination;
+            kafka::TweetProducer* producer;
+            const tweetoscope::observations* observation;
+            cascade_queue queue;
+            std::unordered_map<tweetoscope::cascade::idf, std::weak_ptr<Cascade>> symbols;
+            std::unordered_map<tweetoscope::timestamp, std::queue<std::weak_ptr<Cascade>>> partial_cascades;
     };
 
     struct MessageHandler
     {
 
-        MessageHandler(int termination, tweetoscope::observations observation): termination(termination), observation(observation)
-        {}
+        MessageHandler(const tweetoscope::params::collector& params): producer(params), termination(params.times.terminated), 
+            observation(params.times.observation)
+        {
+            Cascade::partial_topic = params.topic.out_series;
+            Cascade::terminated_topic = params.topic.out_properties;
+        }
 
         void operator()(cppkafka::Message&& msg)
         {
@@ -148,13 +177,14 @@ namespace processor
             int key = tweetoscope::cascade::idf(std::stoi(msg.get_key()));
             auto istr = std::istringstream(std::string(msg.get_payload()));
             istr >> twt;
-            auto [it, changed] = processor_map.try_emplace(twt.source, termination, observation);
+            auto [it, changed] = processor_map.try_emplace(twt.source, termination, &observation, &producer);
             it->second(key, std::move(twt));
         }
 
         private:
-            tweetoscope::observations observation;
+            const tweetoscope::observations observation;
             int termination;
+            kafka::TweetProducer producer;
             std::map<int, Processor> processor_map;
     };
 }
