@@ -4,8 +4,11 @@ project(Tweetoscope VERSION 0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+add_definitions(-DBOOST_LOG_DYN_LINK)
+add_definitions(-DBOOST_TEST_DYN_LINK)
+
 find_package(PkgConfig)
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS unit_test_framework log REQUIRED)
 pkg_check_modules(GAML REQUIRED gaml)
 pkg_check_modules(CPPKAFKA REQUIRED cppkafka)
 
@@ -15,7 +18,7 @@ foreach (_variableName ${_variableNames})
     message(STATUS "${_variableName}=${${_variableName}}")
 endforeach()
 
-link_libraries(${CPPKAFKA_LIBRARIES} pthread)
+link_libraries(${CPPKAFKA_LIBRARIES} pthread Boost::log_setup Boost::log)
 include_directories(${CPPKAFKA_INCLUDE_DIRS} ${GAML_INCLUDE_DIRS})
 
 add_subdirectory(src/cpp)

@@ -4,6 +4,7 @@
 #include <cppkafka/cppkafka.h>
 #include <chrono>
 
+#include "Logger.hpp"
 #include "TweetCollector/TweetCollectorParams.hpp"
 #include "TweetCollector/TweetStreams.hpp"
 
@@ -26,6 +27,7 @@ namespace kafka
                 consumer.set_timeout(timeout);
             }
             consumer.subscribe({params.topic.in});
+            BOOST_LOG_TRIVIAL(info) << "Consumer subscribed to topic " << params.topic.in;
         }
 
         cppkafka::Message get_message()

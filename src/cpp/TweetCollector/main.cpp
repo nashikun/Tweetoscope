@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/log/expressions.hpp>
 #include "../Consumer.hpp"
 #include "../Producer.hpp"
 #include "Processor.hpp"
@@ -13,6 +14,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    init_logger("tweet_collector");
     std::string param_path;
     if(argc == 2) {
         param_path = argv[1];
