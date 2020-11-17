@@ -10,7 +10,7 @@ RUN wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.
 RUN tar -xvzf kafka_2.13-2.6.0.tgz
 ENV KAFKA_PATH /kafka_2.13-2.6.0
 RUN tar -zxvf boost_1_74_0.tar.gz
-RUN cd boost_1_74_0 && ./bootstrap.sh && ./b2 --with-test --prefix=/usr/lib
+RUN cd boost_1_74_0 && ./bootstrap.sh && ./b2 --with-libraries=all --prefix=/usr/lib
 RUN cd gaml; mkdir -p gaml/build; cd gaml/build; cmake .. -DCMAKE_INSTALL_PREFIX=/usr; make -j; make install
 RUN rm boost_1_74_0.tar.gz kafka_2.13-2.6.0.tgz
 RUN cd cppkafka; mkdir build; cd build; cmake ..; make; make install

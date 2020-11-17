@@ -4,12 +4,15 @@
 #include <cppkafka/message.h>
 #include <memory>
 #include <map>
+#include <iomanip>
 #include <cppkafka/cppkafka.h>
+#include <new>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <boost/heap/binomial_heap.hpp>
 
+#include "../Logger.hpp"
 #include "TweetStreams.hpp"
 #include "TweetCollectorParams.hpp"
 #include "../Producer.hpp"
@@ -65,6 +68,7 @@ namespace processor
                 }
                 os << "]}";
                 producer->send_message(partial_topic, os.str(), key);
+                BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts;
             }
 
             void terminate() const noexcept
@@ -76,6 +80,7 @@ namespace processor
                     << "\'t_end\' : "  << last_ts << "}";
                 
                 for(auto& obs : *observation) producer->send_message(terminated_topic, os.str(), key);
+                BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated";
             }
 
         public:
@@ -116,6 +121,7 @@ namespace processor
         {
             ref r = std::make_shared<Cascade>(key, twt, observation, producer);
             auto [it, inserted] = symbols.insert(std::make_pair(key, r));
+            if(inserted) BOOST_LOG_TRIVIAL(debug) << "Created new cascade with key: " << key;
             for(auto& [ts, cascades]: partial_cascades)
             {
                 while(cascades.size())
@@ -131,6 +137,7 @@ namespace processor
                     }
                     else
                     {
+                        BOOST_LOG_TRIVIAL(debug) << "Removed stale shared pointer from partial cascades of obs: " << ts;
                         cascades.pop();
                     }
                 }
@@ -149,6 +156,7 @@ namespace processor
             {
                 sp->add_tweet(twt);
                 queue.update(sp->location);
+                BOOST_LOG_TRIVIAL(debug) << "Added tweet to cascade of id: " << key;
             }
         }
 
@@ -177,7 +185,9 @@ namespace processor
             int key = tweetoscope::cascade::idf(std::stoi(msg.get_key()));
             auto istr = std::istringstream(std::string(msg.get_payload()));
             istr >> twt;
-            auto [it, changed] = processor_map.try_emplace(twt.source, termination, &observation, &producer);
+            auto [it, inserted] = processor_map.try_emplace(twt.source, termination, &observation, &producer);
+            BOOST_LOG_TRIVIAL(trace) << "Received tweet with key: " << key << " and timestamp: " << twt.time;
+            if(inserted) BOOST_LOG_TRIVIAL(info) << "Created new processor for the source: " << twt.source;
             it->second(key, std::move(twt));
         }
 
