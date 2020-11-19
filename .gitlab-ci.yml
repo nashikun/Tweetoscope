@@ -18,10 +18,12 @@ variables:
   PACKAGE_REGISTRY_URL: "https://api.bintray.com/content/nashikun/tweetoscope/generic/${PACKAGE_VERSION}"
 
 dockerbuild:
+  stage: dockerbuild
+  image: docker:latest
+  only:
+    - branches
   tags:
     - docker
-  image: docker:latest
-  stage: dockerbuild
   services:
     - docker:dind
   before_script:
@@ -35,23 +37,27 @@ dockerbuild:
 
 build:
   stage: build
+  image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+  only:
+    - branches
   tags:
     - docker
   artifacts:
     paths:
       - build/
-  image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
   script: 
     - mkdir build
     - cd build; cmake ..; make
 
 test:
   stage: test
+  image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+  only:
+    - branches
   dependencies:
   - build
   tags:
     - docker
-  image: $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
   script:
     - echo "Running the python tests"
     - python3 -m unittest tests
@@ -61,9 +67,10 @@ test:
     # ./build/scripts/kafka.sh stop
 
 deploy:
-  only:
-    - master 
   stage: deploy
+  only:
+    - branches
+    - master 
   dependencies:
     - build
   tags:
@@ -73,11 +80,11 @@ deploy:
 
 upload:
   stage: upload
-  dependencies:
-    - build
   image: curlimages/curl:latest
   rules:
-    - if: $CI_COMMIT_TAG
+  - if: $CI_COMMIT_TAG
+  dependencies:
+    - build
   script:
-    - curl -T build/TweetCollector -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetCollector-${PACKAGE_VERSION}?publish=1
-    - curl -T build/TweetGenerator -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetGenerator-${PACKAGE_VERSION}?publish=1
+    - curl -T build/TweetCollector -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetCollector-${$CI_COMMIT_TAG}?publish=1
+    - curl -T build/TweetGenerator -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetGenerator-${$CI_COMMIT_TAG}?publish=1
