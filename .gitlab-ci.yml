@@ -86,5 +86,5 @@ upload:
   dependencies:
     - build
   script:
-    - curl -T build/TweetCollector -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetCollector-${$CI_COMMIT_TAG}?publish=1
-    - curl -T build/TweetGenerator -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetGenerator-${$CI_COMMIT_TAG}?publish=1
+    - curl -T build/TweetCollector -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetCollector-${CI_COMMIT_TAG}?publish=1
+    - curl -T build/TweetGenerator -unashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetGenerator-${CI_COMMIT_TAG}?publish=1
