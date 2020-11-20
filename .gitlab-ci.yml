@@ -80,10 +80,12 @@ deploy:
 upload:
   stage: upload
   image: $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_DEFAULT_BRANCH
+  tags:
+    - docker
   rules:
   - if: $CI_COMMIT_TAG
   script:
     - mkdir build
     - cd build; cmake ..; make
-    - curl -T ./build/TweetCollector -u nashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetCollector-${CI_COMMIT_TAG}?publish=1
-    - curl -T ./build/TweetGenerator -u nashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetGenerator-${CI_COMMIT_TAG}?publish=1
+    - curl -T TweetCollector -u nashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetCollector-${CI_COMMIT_TAG}?publish=1
+    - curl -T TweetGenerator -u nashikun:$BINARY_API_KEY ${PACKAGE_REGISTRY_URL}/TweetGenerator-${CI_COMMIT_TAG}?publish=1
