@@ -2,6 +2,8 @@ FROM ubuntu:18.04
 
 RUN apt-get update
 RUN apt-get install -y python3-pip cmake pkg-config git zookeeperd tar wget librdkafka-dev libboost-all-dev libssl-dev
+RUN apt update
+RUN apt install curl
 RUN git clone https://github.com/HerveFrezza-Buet/gaml
 RUN git clone https://github.com/mfontanini/cppkafka
 RUN wget https://downloads.apache.org/kafka/2.6.0/kafka_2.13-2.6.0.tgz
