@@ -117,9 +117,9 @@ case $ACTION in
         exit -1
     fi
 
-	run_command "Starting the zookeeper server" "$KAFKA_PATH/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONFIG" "sleep 2"
+	run_command "Starting the zookeeper server" "$KAFKA_PATH/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONFIG" "sleep 5"
 
-	run_command "Starting the kafka server" "$KAFKA_PATH/bin/kafka-server-start.sh -daemon $SERVER_CONFIG" "sleep 2"
+	run_command "Starting the kafka server" "$KAFKA_PATH/bin/kafka-server-start.sh -daemon $SERVER_CONFIG" "sleep 5"
 	;;
     stop)
 	# Stop the kafka server

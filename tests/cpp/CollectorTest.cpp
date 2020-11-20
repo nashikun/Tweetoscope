@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE( connection_test )
     processor::MessageHandler handler(params);
     build_tweet(producer, params.topic.in, "0", "", 1, 10, 0); 
     int counter = 0;
-    for(int i=0; i < 50; ++i)
+    for(int i=0; i < 100; ++i)
     {
         auto msg = consumer.get_message();
         if(msg && !msg.get_error())
@@ -128,8 +128,6 @@ BOOST_AUTO_TEST_CASE( termination_test )
     build_tweet(producer, params.topic.in, "1", "", 31, 10, 0); 
     build_tweet(producer, params.topic.in, "1", "", 32, 11, 0); 
     build_tweet(producer, params.topic.in, "1", "", 34, 12, 0); 
-    build_tweet(producer, params.topic.in, "1", "", 60, 12, 0); 
-    build_tweet(producer, params.topic.in, "0", "", 62, 12, 0); 
 
     int counter = 0;
     for(int i=0; i < 500; ++i)
@@ -138,10 +136,10 @@ BOOST_AUTO_TEST_CASE( termination_test )
         if(msg && !msg.get_error())
         {
             handler(std::move(msg));
-            if(counter++ == 10) break;
+            if(counter++ == 8) break;
         }
     }
-    if(counter < 10) BOOST_FAIL("Message not received");
+    if(counter < 8) BOOST_FAIL("Message not received");
     BOOST_ASSERT(handler.processor_map.size() == 1);
     auto processor = handler.processor_map.find(0);
     BOOST_ASSERT(processor != handler.processor_map.end());
@@ -149,7 +147,7 @@ BOOST_AUTO_TEST_CASE( termination_test )
     auto first_key = processor->second.symbols.at(0); 
     auto second_key = processor->second.symbols.at(1); 
     BOOST_ASSERT(!first_key.lock());
-    BOOST_ASSERT(!second_key.lock());
+    BOOST_ASSERT(second_key.lock());
 }
 
 BOOST_AUTO_TEST_CASE( partial_test )
