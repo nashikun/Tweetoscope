@@ -20,26 +20,54 @@
 namespace processor
 {
     class Cascade;
+
     class Processor;
+
     class MessageHandler;
 
     using ref = std::shared_ptr<Cascade>;
 
+    /*!
+     * Struct to compare cascades in the queue
+     */
     struct Cascade_Comparator
     {
+        /*!
+         * Compares two cascades shared pointers
+         */
         bool operator()(ref op1, ref op2) const noexcept;
     };
     
     using cascade_queue = boost::heap::binomial_heap<ref, boost::heap::compare<Cascade_Comparator>>;
 
+    /*!
+      * Holds a tweet and its retweets
+      *
+      * @param key The cascade id
+      * @param twt The first tweet in the cascade
+      * @param observations
+      */
     class Cascade
     {
         public:
+
+            /*!
+             * Constructor
+             * @param key The cascade identifier
+             * @param twt The first tweet in cascade
+             * @param observations The list of observation windows
+             * @param producer A pointer to the tweet producer
+             */
             Cascade(const tweetoscope::cascade::idf key, const tweetoscope::tweet& twt,
-                    const tweetoscope::observations* observation, kafka::TweetProducer* producer)
-                : msg(twt.msg), info(twt.info), key(std::to_string(key)), producer(producer), observation(observation)
+                    const tweetoscope::observs* observations, kafka::TweetProducer* producer)
+                : msg(twt.msg), info(twt.info), key(std::to_string(key)), producer(producer), observations(observations)
             {}
 
+            /*!
+             * Adds the time and magnitude of a tweet to the cascade
+             *
+             * @param twt The tweet to add to the cascade
+             */
             void add_tweet(const tweetoscope::tweet& twt)
             {
                 if(!first_ts) first_ts = twt.time;
@@ -47,10 +75,21 @@ namespace processor
                 magnitudes.push_back({twt.time, twt.magnitude});
             }
 
+            /*!
+             * The timestamp of the first tweet in the cascade
+             */
             const tweetoscope::timestamp& first_time() const noexcept {return first_ts;}
 
+            /*!
+             * The timestamp of the larst tweet in the cascade
+             */
             const tweetoscope::timestamp& last_time() const noexcept {return last_ts;}
 
+            /*!
+             * Publishes a message at the corresponding observation window
+             * 
+             * @param ts The duration of the observation
+             */
             void partial(tweetoscope::timestamp ts) const noexcept
             {
                 std::ostringstream os;
@@ -71,6 +110,9 @@ namespace processor
                 BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts;
             }
 
+            /*!
+             * Sends a termination message, publishing the total length of the cascade
+             */
             void terminate() const noexcept
             {
                 std::ostringstream os;
@@ -79,20 +121,20 @@ namespace processor
                     << "\'n_tot\' : "  << magnitudes.size() << " , "
                     << "\'t_end\' : "  << last_ts << "}";
                 
-                for(auto& obs : *observation) producer->send_message(terminated_topic, os.str(), key);
+                for(auto& obs : *observations) producer->send_message(terminated_topic, os.str(), key);
                 BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated";
             }
 
         public:
-            cascade_queue::handle_type location;
-            const std::string key;
-            inline static std::string partial_topic{};
-            inline static std::string terminated_topic{};
+            cascade_queue::handle_type location;/*!< A handler for the cascade's location in the queue*/
+            inline static std::string partial_topic{}; /*!< The topic to output partial cascades in */
+            inline static std::string terminated_topic{};/*!< The topic to output terminated cascades in */
 
         private:
+            const std::string key;
             const std::string msg;
             const std::string info;
-            const tweetoscope::observations* observation;
+            const tweetoscope::observs* observations;
             kafka::TweetProducer* producer;
             bool terminated{false};
             tweetoscope::timestamp last_ts{0};
@@ -105,21 +147,35 @@ namespace processor
         return op1->last_time() < op2->last_time();
     }
 
+    /*!
+      Processes the cascades belonging to the same source
+      @param termination The time to wait before terminatio
+      @param observations The list of observation windows
+      @param producer Pointer to the tweets producer
+      */
     struct Processor
     {
 
-        Processor(const int termination, const tweetoscope::observations* observation, kafka::TweetProducer* producer): termination(termination), 
-            observation(observation), producer(producer)
+        /*!
+         * Constructor
+         */
+        Processor(const int termination, const tweetoscope::observs* observations, kafka::TweetProducer* producer): termination(termination), 
+            observations(observations), producer(producer)
         {
-            for(const auto& obs: *observation)
+            for(const auto& obs: *observations)
             {
                 partial_cascades.insert({obs, {}});
             }
         }
 
+        /*!
+         * Processes a tweet, terminating and observing previous twees accordingly
+         * @param key The tweet id
+         * @param twt The tweet body
+         */
         void operator()(const tweetoscope::cascade::idf key, tweetoscope::tweet&& twt)
         {
-            ref r = std::make_shared<Cascade>(key, twt, observation, producer);
+            ref r = std::make_shared<Cascade>(key, twt, observations, producer);
             auto [it, inserted] = symbols.insert(std::make_pair(key, r));
             if(inserted) BOOST_LOG_TRIVIAL(debug) << "Created new cascade with key: " << key;
             for(auto& [ts, cascades]: partial_cascades)
@@ -163,36 +219,47 @@ namespace processor
         private:
             int termination;
             kafka::TweetProducer* producer;
-            const tweetoscope::observations* observation;
+            const tweetoscope::observs* observations;
             cascade_queue queue;
             std::unordered_map<tweetoscope::cascade::idf, std::weak_ptr<Cascade>> symbols;
             std::unordered_map<tweetoscope::timestamp, std::queue<std::weak_ptr<Cascade>>> partial_cascades;
     };
 
+    /*!
+      Maps the tweets to their appropriate processors
+
+      @param params Collector configuration object
+      */
     struct MessageHandler
     {
 
+        /*!
+         * Constructor
+         */
         MessageHandler(const tweetoscope::params::collector& params): producer(params), termination(params.times.terminated), 
-            observation(params.times.observation)
+            observations(params.times.observations)
         {
             Cascade::partial_topic = params.topic.out_series;
             Cascade::terminated_topic = params.topic.out_properties;
         }
 
+        /*!
+         * Processes a received message, sending it to the appropriate processor
+         */
         void operator()(cppkafka::Message&& msg)
         {
             tweetoscope::tweet twt;
             int key = tweetoscope::cascade::idf(std::stoi(msg.get_key()));
             auto istr = std::istringstream(std::string(msg.get_payload()));
             istr >> twt;
-            auto [it, inserted] = processor_map.try_emplace(twt.source, termination, &observation, &producer);
+            auto [it, inserted] = processor_map.try_emplace(twt.source, termination, &observations, &producer);
             BOOST_LOG_TRIVIAL(trace) << "Received tweet with key: " << key << " and timestamp: " << twt.time;
             if(inserted) BOOST_LOG_TRIVIAL(info) << "Created new processor for the source: " << twt.source;
             it->second(key, std::move(twt));
         }
 
         private:
-            const tweetoscope::observations observation;
+            const tweetoscope::observs observations;
             int termination;
             kafka::TweetProducer producer;
             std::map<int, Processor> processor_map;

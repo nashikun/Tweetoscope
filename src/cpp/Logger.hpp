@@ -23,7 +23,11 @@ namespace sinks = boost::log::sinks;
 namespace expr = boost::log::expressions;
 namespace attrs = boost::log::attributes;
 
-
+/*!
+ * Initialises the logging.
+ *
+ * @param filename The name of the binary running the logger
+ */
 void init_logger(std::string filename)
 {
     logging::add_common_attributes();

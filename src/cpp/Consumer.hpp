@@ -10,8 +10,16 @@
 
 namespace kafka
 {
+    /*!
+     *  Reads messages from a kafka topic
+     * 
+     *  @param params The collctor configuration object
+     */
     struct TweetConsumer
     {
+        /*!
+         * Constructor
+         */
         TweetConsumer(tweetoscope::params::collector params): consumer(get_config(params))
         {
             std::cout << std::endl
@@ -30,6 +38,11 @@ namespace kafka
             BOOST_LOG_TRIVIAL(info) << "Consumer subscribed to topic " << params.topic.in;
         }
 
+        /*!
+         * Returns a message from the subscribed topic. 
+         *
+         * Message may be empty or contain an error
+         */
         cppkafka::Message get_message()
         {
             return consumer.poll();

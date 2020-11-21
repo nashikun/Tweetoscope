@@ -23,40 +23,61 @@
 namespace tweetoscope
 {
 
-    using observations = std::vector<std::size_t>;
-
+    using observs = std::vector<std::size_t>;
+    
+    /*! 
+     * Namespace for reading configuration files and creationg config objects
+     */
     namespace params
     {
      
         namespace section
         {
-        
+            /*!
+             * Contains the kafka-server config
+             */
             struct Kafka
             {
-                std::string brokers;
-                std::string group;
-                std::string offset_reset;
-                bool connection;
+                std::string brokers;/*!< The kafka bootstrap servers */
+                std::string group;/*!< The kafka consumer group */
+                std::string offset_reset;/*!< The kafka auto.offset.reset parameter */
+                bool connection;/*!< The kafka log.close.connection parameter */
             };
 
+            /*!
+             * Contains the kafka topic configs
+             */
             struct Topic
             {
-                std::string in, out_series, out_properties, timeout;
+                std::string in;/*!< The topic where tweets are published*/
+                std::string out_series;/*!< The topic to publish cascade series*/
+                std::string out_properties;/*!< The topic to publish cascade sizes*/
+                std::string timeout;/*!< The timeout parameter for polling kafka messages*/
             };
 
+            /*!
+             * Contains the observation windows and termination time
+             */
             struct Times
             {
-                observations observation;
-                std::size_t terminated;
+                observs observations;/*!< The observation windows*/
+                std::size_t terminated;/*!< The durations before terminating the cascade*/
             };
 
+            /*!
+             * Cascade related data
+             */
             struct Cascade
             {
-                std::size_t min_cascade_size;
+                std::size_t min_cascade_size;/*!< The minimum size to send cascade info*/
             };
         }
 
-
+        /*!
+         * Parses the collector config
+         * @param config_filename The path of the config file
+         * @param randomize Whether to add a random number after the kafka topic to ensure unicity
+         */
         struct collector
         {
 
@@ -85,11 +106,14 @@ namespace tweetoscope
                 }
 
             public:
-                section::Kafka kafka;
-                section::Topic topic;
-                section::Times times;
-                section::Cascade cascade;
+                section::Kafka kafka;/*!< Holds the kafka config*/
+                section::Topic topic;/*!< Holds the input and output topic config*/
+                section::Times times;/*!< Holds the durations config*/
+                section::Cascade cascade;/*!< Holds the cascade config*/
 
+                /*!
+                 * The constructor
+                 */
                 collector(const std::string& config_filename, bool randomize=false)
                 {
                     std::ifstream ifs(config_filename.c_str());
@@ -119,7 +143,7 @@ namespace tweetoscope
                             }
                             else if(current_section == "times")
                             {
-                                if     (key == "observation")    times.observation.push_back(std::stoul(val));
+                                if     (key == "observations")    times.observations.push_back(std::stoul(val));
                                 else if(key == "terminated")     times.terminated = std::stoul(val);
                             }
                             else if(current_section == "cascade")
@@ -133,6 +157,10 @@ namespace tweetoscope
                 }
         };
 
+        /*!
+         * Outputs a collector config into a stream
+         * \memberof collector
+         */
         inline std::ostream& operator<<(std::ostream& os, const collector& c)
         {
             os << "[kafka]" << std::endl
@@ -147,8 +175,8 @@ namespace tweetoscope
                 << "  timeout=" << c.topic.timeout << std::endl
                 << std::endl
                 << "[times]" << std::endl;
-            for(auto& o : c.times.observation)
-                os << "  observation=" << o << std::endl;
+            for(auto& o : c.times.observations)
+                os << "  observations=" << o << std::endl;
             os << "  terminated=" << c.times.terminated << std::endl
                 << std::endl
                 << "[cascade]" << std::endl
