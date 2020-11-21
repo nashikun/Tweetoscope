@@ -17,16 +17,25 @@ namespace tweetoscope
         using idf = std::size_t;
     }
 
+    /*!
+     * A data structure to store a tweet
+     */
     struct tweet
     {
-        std::string type = "";
-        std::string msg  = "";
-        timestamp time   = 0;
-        double magnitude = 0;
-        source::idf source = 0;
-        std::string info = "";
+        std::string type = ""; /*!< Whether the it's a tweet or a retweet */
+        std::string msg  = ""; /*!< The tweet message */
+        timestamp time   = 0; /*!< The time the tweet was created*/
+        double magnitude = 0; /*!< The number of followers of the tweeting person */
+        source::idf source = 0; /*!< The source id */
+        std::string info = ""; /*!< Ebugging info*/
     };
 
+    /*!
+     * \memberof tweet
+     * Reads a stream whose underlying buffer starts with a value between two double quotes, and returns said value.
+     *
+     * Ex if the stream starts with `"key": "value"`, it will output `key` and the stream will be left with `:"value"` 
+     */
     inline std::string get_string_val(std::istream& is)
     {
         char c;
@@ -36,6 +45,13 @@ namespace tweetoscope
         return value; 
     }
 
+    /*!
+     * \memberof tweet
+     * Reads a tweet from a stream and creates a tweet from it
+     *
+     * @param is Input stream
+     * @param t Output tweet
+     */
     inline std::istream& operator>>(std::istream& is, tweet& t)
     {
         // A tweet is  :

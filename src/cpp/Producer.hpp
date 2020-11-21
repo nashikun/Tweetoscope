@@ -10,13 +10,28 @@
 
 namespace kafka
 {
+    /*!
+    *  Writes messages to kafka topics
+    *
+    *  @param params The collector configuration objet
+    */
     struct TweetProducer
     {
+        /*!
+         * Constructor
+         */
         TweetProducer(tweetoscope::params::collector params): producer(get_config(params))
         {
             BOOST_LOG_TRIVIAL(info) << "Created consumer on brokers" << params.kafka.brokers;
         }
 
+        /*!
+         * Sends a message to a topic
+         *
+         * @param topic The topic to send the message to
+         * @param key The message key
+         * @param payload The message body
+         */
         void send_message(const std::string& topic, const std::string payload, const std::string& key)
         {
             BOOST_LOG_TRIVIAL(trace) << "Sent message on topic: " << topic << " with key: " << key << " and payload: " << payload;

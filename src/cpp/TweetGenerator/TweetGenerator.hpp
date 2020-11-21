@@ -38,6 +38,9 @@ namespace tweetoscope {
     kafka_brokers
   };
 
+  /*!
+   * Returns the appropriate Parameter based on its name
+   */
   inline Param param_of_keyword(const std::string& keyword) {
     if(keyword == "tweets_cache_page_size")           return Param::tweets_cache_page_size; 
     if(keyword == "tweets_cache_nb_pages")            return Param::tweets_cache_nb_pages; 
@@ -57,7 +60,9 @@ namespace tweetoscope {
     throw std::runtime_error(std::string("bad keyword found: ") + keyword);
   }
 
-  // This illustrates the use of istreams to parse input streams of bytes.
+  /*!
+   * Parses a stream of bytes and returns a parameter
+   */
   inline Param parse_param_keyword(std::istream& is) {
     char c = '#';
     while(c == '#') {
@@ -70,6 +75,9 @@ namespace tweetoscope {
     return param_of_keyword(keyword);
   }
 
+  /*!
+   * The generator's confguration parameters
+   */
   struct Params {
   public:
 
@@ -158,6 +166,9 @@ namespace tweetoscope {
   //        //
   ////////////
 
+  /*!
+   * A structure to hold generated tweets
+   */
   struct Tweet {
     timestamp time     = 0;          //!< The tweet timestamp. The time origin is specific to each tweet source.
     double parsed_time = 0;          //!< This is the time value extracted from the datafile, stored here at parsing time for further conversion into an actual integral timestamp.
