@@ -91,6 +91,9 @@ upload:
 
 pages:
   stage: deploy
+  image: alpine:latest
+  tags:
+    - docker
   only:
     - master 
   dependencies:
