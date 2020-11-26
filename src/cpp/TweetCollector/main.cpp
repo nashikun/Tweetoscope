@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     }
     else {
         std::cout << "Using default config path: config/collector.ini" <<std::endl;
-        param_path = "config/collector.ini";
+        param_path = "./config/collector.ini";
     }
 
     const tweetoscope::params::collector params(param_path);
