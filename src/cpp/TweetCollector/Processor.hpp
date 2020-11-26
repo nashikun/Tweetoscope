@@ -92,22 +92,29 @@ namespace processor
              */
             void partial(tweetoscope::timestamp ts) const noexcept
             {
-                std::ostringstream os;
-
-                os << "{\'type\' : "  << "\'serie\'"   << " , "
-                   << "\'cid\' : "    << key         << " , "
-                   << "\'msg\' : "    << msg         << " , "
-                   << "\'T_obs\' : "  << ts << " , "
-                   << "\'tweets\' : [";
-                
-                for(auto ptr = magnitudes.begin(); ptr != magnitudes.end(); ++ptr)
+                if(magnitudes.size() >= min_cascade_size)
                 {
-                    os << "(" << ptr->first << ", " << ptr->second << ")";
-                    if(ptr != magnitudes.end() - 1) os << ", "; 
+                    std::ostringstream os;
+
+                    os << "{\'type\' : "  << "\'serie\'"   << " , "
+                       << "\'cid\' : "    << key         << " , "
+                       << "\'msg\' : "    << msg         << " , "
+                       << "\'T_obs\' : "  << ts << " , "
+                       << "\'tweets\' : [";
+                    
+                    for(auto ptr = magnitudes.begin(); ptr != magnitudes.end(); ++ptr)
+                    {
+                        os << "(" << ptr->first << ", " << ptr->second << ")";
+                        if(ptr != magnitudes.end() - 1) os << ", "; 
+                    }
+                    os << "]}";
+                    producer->send_message(partial_topic, os.str(), key);
+                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts;
                 }
-                os << "]}";
-                producer->send_message(partial_topic, os.str(), key);
-                BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts;
+                else
+                {
+                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts << "but not sent";
+                }
             }
 
             /*!
@@ -115,20 +122,28 @@ namespace processor
              */
             void terminate() const noexcept
             {
-                std::ostringstream os;
-                os << "{\'type\' : "  << "\'size\'"    << " , "
-                    << "\'cid\' : "    << key         << " , "
-                    << "\'n_tot\' : "  << magnitudes.size() << " , "
-                    << "\'t_end\' : "  << last_ts << "}";
-                
-                for(auto& obs : *observations) producer->send_message(terminated_topic, os.str(), key);
-                BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated";
+                if(magnitudes.size() >= min_cascade_size)
+                {
+                    std::ostringstream os;
+                    os << "{\'type\' : "  << "\'size\'"    << " , "
+                        << "\'cid\' : "    << key         << " , "
+                        << "\'n_tot\' : "  << magnitudes.size() << " , "
+                        << "\'t_end\' : "  << last_ts << "}";
+                    
+                    for(auto& obs : *observations) producer->send_message(terminated_topic, os.str(), key);
+                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated";
+                }
+                else
+                {
+                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated, but wasn't sent";
+                }
             }
 
         public:
             cascade_queue::handle_type location;/*!< A handler for the cascade's location in the queue*/
             inline static std::string partial_topic{}; /*!< The topic to output partial cascades in */
             inline static std::string terminated_topic{};/*!< The topic to output terminated cascades in */
+            inline static int min_cascade_size{};/*!< The minimum cascade size to send it to Kafka*/
 
         private:
             const std::string key;
@@ -241,6 +256,7 @@ namespace processor
         {
             Cascade::partial_topic = params.topic.out_series;
             Cascade::terminated_topic = params.topic.out_properties;
+            Cascade::min_cascade_size = params.cascade.min_cascade_size;
         }
 
         /*!

@@ -100,7 +100,7 @@ done
 case $ACTION in 
     start)
 	if [ -z $ZOOKEEPER_CONFIG ]; then
-        ZOOKEEPER_CONFIG="config/zookeeper.properties"
+        ZOOKEEPER_CONFIG="./config/zookeeper.properties"
         echo "default zookeeper config used: ${ZOOKEEPER_CONFIG}"
 	fi
     if [ ! -f $ZOOKEEPER_CONFIG ]; then
@@ -109,7 +109,7 @@ case $ACTION in
     fi
 
 	if [ -z $SERVER_CONFIG ]; then
-        SERVER_CONFIG="config/server.properties"
+        SERVER_CONFIG="./config/server.properties"
         echo "default server config used: ${SERVER_CONFIG}"
 	fi
     if [ ! -f $SERVER_CONFIG ]; then

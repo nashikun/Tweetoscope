@@ -26,7 +26,7 @@ void build_tweet(kafka::TweetProducer& producer, const std::string& topic,
     producer.send_message(topic, os.str(), key);
 }
 
-std::string param_path{"config/collector_test.ini"};
+std::string param_path{"./config/collector.ini"};
 tweetoscope::params::collector params(param_path, true);
 
 kafka::TweetConsumer consumer(params);

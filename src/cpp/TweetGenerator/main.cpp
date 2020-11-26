@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   }
   else {
     std::cout << "Using default config path: config/params.config" << std::endl;
-    param_path = "config/params.config";
+    param_path = "./config/params.config";
   }
 
   // random seed initialization
