@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tweetgenerator-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: generator
+  template:
+    metadata:
+      name: generator-pod
+      labels:
+        app: generator
+    spec:
+      containers:
+      - name: tweetgenerator-container
+        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweetgenerator
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: regcred
