@@ -1,0 +1,11 @@
+
+kind: Pod
+metadata:
+  name: zookeeper-pod
+  labels:
+    app: zookeeper
+spec:
+  containers:
+    - name: zookeeper-container
+      image: zookeeper
+      imagePullPolicy: IfNotPresent
