@@ -28,12 +28,6 @@ namespace kafka
                 << std::endl
                 << params << std::endl
                 << std::endl;
-            
-            if(params.topic.timeout != "") 
-            {
-                std::chrono::milliseconds timeout{std::stoi(params.topic.timeout)};
-                consumer.set_timeout(timeout);
-            }
             consumer.subscribe({params.topic.in});
             BOOST_LOG_TRIVIAL(info) << "Consumer subscribed to topic " << params.topic.in;
         }
