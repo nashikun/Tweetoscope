@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-RUN apt-get update && apt-get install -y python3-pip cmake pkg-config git zookeeperd tar wget librdkafka-dev libboost-all-dev libssl-dev flex bison
+RUN apt-get update && apt-get install -y python3-pip cmake pkg-config git zookeeperd tar wget libboost-all-dev libssl-dev flex bison librdkafka-dev libzstd-dev libsasl2-dev zlib1g-dev liblz4-dev
 RUN apt update
 RUN apt install -y curl graphviz
 RUN git clone https://github.com/HerveFrezza-Buet/gaml
@@ -13,10 +13,11 @@ RUN tar -xvzf kafka_2.13-2.6.0.tgz
 ENV KAFKA_PATH /kafka_2.13-2.6.0
 RUN tar -zxvf boost_1_74_0.tar.gz
 RUN cd boost_1_74_0 && ./bootstrap.sh --with-libraries=all && ./b2 --prefix=/usr/lib
+# RUN cd librdkafka; ./configure --enable-static --disable-shared --install-deps --disable-zstd --disable-sasl; make; make install
 RUN cd gaml; mkdir -p gaml/build; cd gaml/build; cmake .. -DCMAKE_INSTALL_PREFIX=/usr; make -j; make install
-RUN cd cppkafka; mkdir build; cd build; cmake ..; make; make install
+RUN cd cppkafka; mkdir build; cd build; cmake -DCPPKAFKA_BUILD_SHARED=OFF ..; make; make install
 RUN cd doxygen; mkdir build; cd build; cmake -G "Unix Makefiles" ..; make; make install
-RUN rm boost_1_74_0.tar.gz kafka_2.13-2.6.0.tgz
+RUN rm -r boost_1_74_0.tar.gz kafka_2.13-2.6.0.tgz cppkafka doxygen gaml 
 RUN ldconfig
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt

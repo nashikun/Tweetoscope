@@ -4,15 +4,19 @@ project(Tweetoscope VERSION 0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-SET(Boost_USE_STATIC_LIBS ON)
-# add_definitions(-DBOOST_LOG_DYN_LINK)
-# add_definitions(-DBOOST_TEST_DYN_LINK)
-
+set(Boost_USE_STATIC_LIBS ON)
 find_package(PkgConfig)
 find_package(Boost COMPONENTS unit_test_framework log REQUIRED)
 find_package(Doxygen)
+find_package(CppKafka REQUIRED)
 pkg_check_modules(GAML REQUIRED gaml)
-pkg_check_modules(CPPKAFKA REQUIRED cppkafka)
+pkg_check_modules(RDKAFKA REQUIRED rdkafka)
+
+if(NOT ENVIRONMENT)
+    set(ENVIRONMENT development)
+endif()
+
+message("Using config for environment: ${ENVIRONMENT}")
 
 if(NOT ENVIRONMENT)
     set(ENVIRONMENT development)
@@ -32,8 +36,8 @@ endif()
 #     message(STATUS "${_variableName}=${${_variableName}}")
 # endforeach()
 
-link_libraries(${CPPKAFKA_LIBRARIES} pthread Boost::log_setup Boost::log)
-include_directories(${CPPKAFKA_INCLUDE_DIRS} ${GAML_INCLUDE_DIRS})
+link_libraries(CppKafka::cppkafka pthread Boost::log_setup Boost::log ${RDKAFKA_STATIC_LDFLAGS})
+include_directories(${GAML_INCLUDE_DIRS})
 
 add_subdirectory(src/cpp)
 add_subdirectory(tests/cpp)

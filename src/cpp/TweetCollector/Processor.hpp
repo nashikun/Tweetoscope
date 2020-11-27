@@ -113,7 +113,7 @@ namespace processor
                 }
                 else
                 {
-                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts << "but not sent";
+                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts <<  " but not sent";
                 }
             }
 

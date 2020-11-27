@@ -22,7 +22,7 @@ namespace kafka
          */
         TweetProducer(tweetoscope::params::collector params): producer(get_config(params))
         {
-            BOOST_LOG_TRIVIAL(info) << "Created consumer on brokers" << params.kafka.brokers;
+            BOOST_LOG_TRIVIAL(info) << "Created consumer on brokers " << params.kafka.brokers;
         }
 
         /*!
