@@ -24,6 +24,7 @@ void build_tweet(kafka::TweetProducer& producer, const std::string& topic,
        << '}';
 
     producer.send_message(topic, os.str(), key);
+    // producer.flush();
 }
 
 std::string param_path{"./config/collector.ini"};
@@ -67,7 +68,7 @@ BOOST_AUTO_TEST_CASE( sources_test )
         if(msg && !msg.get_error())
         {
             handler(std::move(msg));
-            if(counter++ == 6) break;
+            if(++counter == 6) break;
         }
     }
     if(counter < 5) BOOST_FAIL("Message not received");
@@ -101,7 +102,7 @@ BOOST_AUTO_TEST_CASE( cascade_length_test )
         if(msg && !msg.get_error())
         {
             handler(std::move(msg));
-            if(counter++ == 11) break;
+            if(++counter == 11) break;
         }
     }
     if(counter < 11) BOOST_FAIL("Message not received");
@@ -136,7 +137,7 @@ BOOST_AUTO_TEST_CASE( termination_test )
         if(msg && !msg.get_error())
         {
             handler(std::move(msg));
-            if(counter++ == 8) break;
+            if(++counter == 8) break;
         }
     }
     if(counter < 8) BOOST_FAIL("Message not received");
@@ -168,7 +169,7 @@ BOOST_AUTO_TEST_CASE( partial_test )
         if(msg && !msg.get_error())
         {
             handler(std::move(msg));
-            if(counter++ == 7) break;
+            if(++counter == 7) break;
         }
     }
     if(counter < 7) BOOST_FAIL("Message not received");

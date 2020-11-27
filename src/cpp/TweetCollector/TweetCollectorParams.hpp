@@ -52,7 +52,6 @@ namespace tweetoscope
                 std::string in;/*!< The topic where tweets are published*/
                 std::string out_series;/*!< The topic to publish cascade series*/
                 std::string out_properties;/*!< The topic to publish cascade sizes*/
-                std::string timeout;/*!< The timeout parameter for polling kafka messages*/
             };
 
             /*!
@@ -139,7 +138,6 @@ namespace tweetoscope
                                 if     (key == "in")             topic.in             = val + suffix;
                                 else if(key == "out_series")     topic.out_series     = val + suffix;
                                 else if(key == "out_properties") topic.out_properties = val + suffix;
-                                else if(key == "timeout") topic.timeout = val;
                             }
                             else if(current_section == "times")
                             {
@@ -172,7 +170,6 @@ namespace tweetoscope
                 << "  in=" << c.topic.in << std::endl
                 << "  out_series=" << c.topic.out_series << std::endl
                 << "  out_properties=" << c.topic.out_properties << std::endl
-                << "  timeout=" << c.topic.timeout << std::endl
                 << std::endl
                 << "[times]" << std::endl;
             for(auto& o : c.times.observations)
