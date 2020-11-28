@@ -16,8 +16,8 @@ else
     IMAGE_BRANCH=$CI_DEFAULT_BRANCH
 fi 
 
-echo "Using image: $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$IMAGE_BRANCH"
-docker pull gitlab-student.centralesupelec.fr:4567/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$IMAGE_BRANCH
+echo "Using image: $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$IMAGE_BRANCH"
+docker pull $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$IMAGE_BRANCH
 
 echo "changed file: $(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA) "
 echo detected files: $(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA -- Dockerfile .gitlab-ci.yml requirements.txt)
@@ -25,12 +25,12 @@ echo detected files: $(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA
 # build the image, or use the existing one if no changes
 if [ $(git diff --quiet --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA -- Dockerfile .gitlab-ci.yml requirements.txt) ]; then
     echo "One or more of Dockerfile, requirements.txt and .gitlab-ci.yml changed. Building"
-    docker build -t gitlab-student.centralesupelec.fr:4567/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH --cache-from $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$IMAGE_BRANCH . > docker-build.log
+    docker build -t gitlab-student.centralesupelec.fr:4567/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$CI_COMMIT_BRANCH --cache-from $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$IMAGE_BRANCH . > docker-build.log
 else
     echo "Adding tag to default branch:"
-    docker tag gitlab-student.centralesupelec.fr:4567/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$IMAGE_BRANCH gitlab-student.centralesupelec.fr:4567/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH 
+    docker tag $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$IMAGE_BRANCH $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$CI_COMMIT_BRANCH 
 fi
 
 # pushing the image
 echo "Pushing image: "
-docker push gitlab-student.centralesupelec.fr:4567/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+docker push $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/$CI_IMAGE_VERSION:$CI_COMMIT_BRANCH

@@ -29,7 +29,7 @@ namespace kafka
                 << params << std::endl
                 << std::endl;
             consumer.subscribe({params.topic.in});
-            BOOST_LOG_TRIVIAL(info) << "Consumer subscribed to topic " << params.topic.in;
+            LOG_INFO("Consumer subscribed to topic " + params.topic.in);
         }
 
         /*!
