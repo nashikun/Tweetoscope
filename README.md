@@ -60,7 +60,7 @@ lz4
 Alternatively, you can use our docker image with all dependencies pre-installed:
 gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/3:master
 
-Or find the packaged binaries on the <a href="">releases</a> page. The only dependency for the binaries is rdkafka, which doesn't have a static version.
+Or find the packaged binaries on the <a href="https://gitlab-student.centralesupelec.fr/tweetoscope-mullticolore/tweetou/-/releases">releases</a> page. The only dependency for the binaries is rdkafka, which doesn't have a static version.
 ```
 $ apt-get update
 $ apt-get install -y librdkafka-dev
