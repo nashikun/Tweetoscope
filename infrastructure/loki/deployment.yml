@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: loki
+  template:
+    metadata:
+      labels:
+        service: loki
+    spec:
+      containers:
+      - args:
+        - -config.file=/etc/loki/config.yaml
+        image: grafana/loki:1.6.0
+        imagePullPolicy: ""
+        name: loki
+        volumeMounts:
+          - mountPath: /index-files
+            name: index-files
+          - mountPath: /etc/loki/
+            name: loki-config
+        ports:
+        - containerPort: 3100
+        resources: {}
+      - args:
+        - -config.file=/etc/promtail/config.yaml
+        image: grafana/promtail:1.6.0
+        imagePullPolicy: ""
+        name: promtail
+        volumeMounts:
+          - mountPath: /index-files
+            name: index-files
+          - mountPath: /logs
+            name: logs
+          - mountPath: /etc/promtail/
+            name: promtail-config
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+        - name: index-files
+          hostPath:
+            path: /loki
+            type: DirectoryOrCreate
+        - name: logs
+          hostPath:
+            path: /logs
+            type: DirectoryOrCreate
+        - name: loki-config
+          configMap:
+            name: loki-config
+        - name: promtail-config
+          configMap:
+            name: promtail-config

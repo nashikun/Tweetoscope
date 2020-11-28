@@ -12,18 +12,6 @@ find_package(CppKafka REQUIRED)
 pkg_check_modules(GAML REQUIRED gaml)
 pkg_check_modules(RDKAFKA REQUIRED rdkafka)
 
-if(NOT ENVIRONMENT)
-    set(ENVIRONMENT development)
-endif()
-
-message("Using config for environment: ${ENVIRONMENT}")
-
-if(NOT ENVIRONMENT)
-    set(ENVIRONMENT development)
-endif()
-
-message("Using config for environment: ${ENVIRONMENT}")
-
 if (NOT DOXYGEN_FOUND)
     message("Couldn't fond Doxygen. Documentation will not be generated")
 else()
@@ -45,19 +33,22 @@ file(COPY src/python DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY tests/python DESTINATION ${CMAKE_BINARY_DIR}/tests)
 
 add_custom_target(CopyConfig ALL)
-file(GLOB CONFIG_FILES RELATIVE ${CMAKE_SOURCE_DIR}/config/${ENVIRONMENT} ${CMAKE_SOURCE_DIR}/config/${ENVIRONMENT}/*)
-file(GLOB DEFAULT_CONFIG_FILES RELATIVE ${CMAKE_SOURCE_DIR}/config/default ${CMAKE_SOURCE_DIR}/config/default/*)
+foreach(ENVIRONMENT development test deployment)
 
-foreach(CONFIG_FILE ${CONFIG_FILES})
-    add_custom_command(TARGET CopyConfig COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/config/${ENVIRONMENT}/${CONFIG_FILE} ${CMAKE_BINARY_DIR}/config/${CONFIG_FILE})
+    file(GLOB CONFIG_FILES RELATIVE ${CMAKE_SOURCE_DIR}/config/${ENVIRONMENT} ${CMAKE_SOURCE_DIR}/config/${ENVIRONMENT}/*)
+    file(GLOB DEFAULT_CONFIG_FILES RELATIVE ${CMAKE_SOURCE_DIR}/config/default ${CMAKE_SOURCE_DIR}/config/default/*)
+
+    foreach(CONFIG_FILE ${CONFIG_FILES})
+        add_custom_command(TARGET CopyConfig COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/config/${ENVIRONMENT}/${CONFIG_FILE} ${CMAKE_BINARY_DIR}/config/${ENVIRONMENT}/${CONFIG_FILE})
+    endforeach()
+
+    foreach(CONFIG_FILE ${DEFAULT_CONFIG_FILES})
+        if(NOT CONFIG_FILE IN_LIST CONFIG_FILES )
+            add_custom_command(TARGET CopyConfig COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/config/default/${CONFIG_FILE} ${CMAKE_BINARY_DIR}/config/${ENVIRONMENT}/${CONFIG_FILE})
+        endif()
+    endforeach()
+
 endforeach()
-
-foreach(CONFIG_FILE ${DEFAULT_CONFIG_FILES})
-    if(NOT CONFIG_FILE IN_LIST CONFIG_FILES )
-        add_custom_command(TARGET CopyConfig COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/config/default/${CONFIG_FILE} ${CMAKE_BINARY_DIR}/config/${CONFIG_FILE})
-    endif()
-endforeach()
-
 file(COPY data DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY scripts DESTINATION ${CMAKE_BINARY_DIR})
 

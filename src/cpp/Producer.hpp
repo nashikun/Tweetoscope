@@ -22,7 +22,7 @@ namespace kafka
          */
         TweetProducer(tweetoscope::params::collector params): producer(get_config(params))
         {
-            BOOST_LOG_TRIVIAL(info) << "Created consumer on brokers " << params.kafka.brokers;
+            LOG_INFO("Created consumer on brokers " + params.kafka.brokers);
         }
 
         /*!
@@ -34,7 +34,7 @@ namespace kafka
          */
         void send_message(const std::string& topic, const std::string payload, const std::string& key)
         {
-            BOOST_LOG_TRIVIAL(trace) << "Sent message on topic: " << topic << " with key: " << key << " and payload: " << payload;
+            LOG_TRACE("Sent message on topic: " + topic + " with key: " + key + " and payload: " + payload);
             producer.produce(cppkafka::MessageBuilder(topic).key(key).payload(payload));
         }
 

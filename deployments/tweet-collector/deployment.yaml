@@ -1,21 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tweetcollector-deployment
+  name: tweet-collector
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: collector
+      app: tweet-collector
   template:
     metadata:
-      name: collector-pod
+      name: tweet-collector
       labels:
-        app: collector
+        app: tweet-collector
     spec:
       containers:
-      - name: tweetcollector-container
+      - name: tweetcollector
         image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweetcollector
         imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /logs
+          name: logs
       imagePullSecrets:
       - name: regcred
+      volumes:
+        - name: logs
+          hostPath:
+            path: /logs
+            type: DirectoryOrCreate

@@ -109,12 +109,9 @@ namespace processor
                     }
                     os << "]}";
                     producer->send_message(partial_topic, os.str(), key);
-                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts;
+                    LOG_DEBUG("Cascade " + key + " has been observed for window: " + std::to_string(ts));
                 }
-                else
-                {
-                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been observed for window: " << ts <<  " but not sent";
-                }
+                else LOG_DEBUG("Cascade " + key + " has been observed for window: " + std::to_string(ts) + " but not sent");
             }
 
             /*!
@@ -131,12 +128,9 @@ namespace processor
                         << "\'t_end\' : "  << last_ts << "}";
                     
                     for(auto& obs : *observations) producer->send_message(terminated_topic, os.str(), key);
-                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated";
+                    LOG_DEBUG("Cascade " + key + " has been terminated");
                 }
-                else
-                {
-                    BOOST_LOG_TRIVIAL(debug) << "Cascade " << std::setw(5) << key << " has been terminated, but wasn't sent";
-                }
+                else LOG_DEBUG("Cascade " + key + " has been terminated, but wasn't sent");
             }
 
         public:
@@ -192,7 +186,7 @@ namespace processor
         {
             ref r = std::make_shared<Cascade>(key, twt, observations, producer);
             auto [it, inserted] = symbols.insert(std::make_pair(key, r));
-            if(inserted) BOOST_LOG_TRIVIAL(debug) << "Created new cascade with key: " << key;
+            if(inserted) LOG_DEBUG("Created new cascade with key: " + std::to_string(key));
             for(auto& [ts, cascades]: partial_cascades)
             {
                 while(cascades.size())
@@ -208,7 +202,7 @@ namespace processor
                     }
                     else
                     {
-                        BOOST_LOG_TRIVIAL(debug) << "Removed stale shared pointer from partial cascades of obs: " << ts;
+                        LOG_DEBUG("Removed stale shared pointer from partial cascades of obs: " + std::to_string(ts));
                         cascades.pop();
                     }
                 }
@@ -227,7 +221,7 @@ namespace processor
             {
                 sp->add_tweet(twt);
                 queue.update(sp->location);
-                BOOST_LOG_TRIVIAL(debug) << "Added tweet to cascade of id: " << key;
+                LOG_DEBUG("Added tweet to cascade of id: " + std::to_string(key));
             }
         }
 
@@ -269,8 +263,8 @@ namespace processor
             auto istr = std::istringstream(std::string(msg.get_payload()));
             istr >> twt;
             auto [it, inserted] = processor_map.try_emplace(twt.source, termination, &observations, &producer);
-            BOOST_LOG_TRIVIAL(trace) << "Received tweet with key: " << key << " and timestamp: " << twt.time;
-            if(inserted) BOOST_LOG_TRIVIAL(info) << "Created new processor for the source: " << twt.source;
+            LOG_TRACE("Received tweet with key: " + std::to_string(key) + " and timestamp: " + std::to_string(twt.time));
+            if(inserted) LOG_INFO("Created new processor for the source: " + std::to_string(twt.source));
             it->second(key, std::move(twt));
         }
 

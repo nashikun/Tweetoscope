@@ -1,0 +1,5 @@
+resources:
+- cluster-role.yml
+- deployment.yml
+- service.yml
+- config-map.yml
