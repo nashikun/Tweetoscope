@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tweet-estimator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tweet-estimator
+  template:
+    metadata:
+      name: tweet-estimator
+      labels:
+        app: tweet-estimator
+    spec:
+      containers:
+      - name: tweet-estimator
+        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweetestimator
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: regcred

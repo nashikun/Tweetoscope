@@ -1,0 +1,5 @@
+{
+    "bootstrap_servers": ["localhost:9092"],
+    "update_size": 5,
+    "times": [300, 600, 1200, 1800]
+}

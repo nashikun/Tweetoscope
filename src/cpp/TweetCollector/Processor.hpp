@@ -96,11 +96,11 @@ namespace processor
                 {
                     std::ostringstream os;
 
-                    os << "{\'type\' : "  << "\'serie\'"   << " , "
-                       << "\'cid\' : "    << key         << " , "
-                       << "\'msg\' : "    << msg         << " , "
-                       << "\'T_obs\' : "  << ts << " , "
-                       << "\'tweets\' : [";
+                    os << "{\"type\" : "  << "\"serie\""   << " , "
+                       << "\"cid\" : "    << key         << " , "
+                       << "\"msg\" : "    << msg         << " , "
+                       << "\"T_obs\' : "  << ts << " , "
+                       << "\"tweets\" : [";
                     
                     for(auto ptr = magnitudes.begin(); ptr != magnitudes.end(); ++ptr)
                     {
@@ -122,10 +122,10 @@ namespace processor
                 if(magnitudes.size() >= min_cascade_size)
                 {
                     std::ostringstream os;
-                    os << "{\'type\' : "  << "\'size\'"    << " , "
-                        << "\'cid\' : "    << key         << " , "
-                        << "\'n_tot\' : "  << magnitudes.size() << " , "
-                        << "\'t_end\' : "  << last_ts << "}";
+                    os << "{\"type\" : "  << "\"size\""    << " , "
+                        << "\"cid\" : "    << key         << " , "
+                        << "\"n_tot\" : "  << magnitudes.size() << " , "
+                        << "\"t_end\" : "  << last_ts << "}";
                     
                     for(auto& obs : *observations) producer->send_message(terminated_topic, os.str(), key);
                     LOG_DEBUG("Cascade " + key + " has been terminated");
