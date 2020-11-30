@@ -1,0 +1,7 @@
+{
+    "bootstrap_servers": ["kafka-service:9092"],
+    "consumer_topic": "cascade_series",
+    "producer_topic": "cascade_properties",
+    "alpha": 2.3,
+    "mu": 10
+}

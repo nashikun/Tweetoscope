@@ -1,0 +1,8 @@
+{
+    "bootstrap_servers": ["localhost:9092"],
+    "consumer_topic": ["cascade_properties",
+    "alert_limit": 100000,
+    "alpha": 2.3,
+    "mu": 10,
+    "times": [300, 600, 1200, 1800]
+}
