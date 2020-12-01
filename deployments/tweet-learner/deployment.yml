@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tweet-learner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tweet-learner
+  template:
+    metadata:
+      name: tweet-learner
+      labels:
+        app: tweet-learner
+    spec:
+      containers:
+      - name: tweet-learner-container
+        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweet-python
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /logs
+          name: logs
+        command: ["learner"]
+        args : ["--config /config/deployment/learner_config.json"]
+        restartPolicy: OnFailure
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+        - name: logs
+          hostPath:
+            path: /logs
+            type: DirectoryOrCreate
+

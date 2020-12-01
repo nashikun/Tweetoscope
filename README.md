@@ -121,15 +121,17 @@ $ ./TweetCollector config/development/collector.ini
 
 For the ML cmponents, if you have installed the pip package, you can do:
 ```
-$ hawkes --config config/development/hawkes_config.json
-$ predictor --config config/development/predictor_config.json
-$ learner --config config/development/learner_config.json
+for component in hawkes predictor learner
+do
+    ${component} --config config/development/${component}_config.json
+end
 ```
 otherwise:
 ```
-$ python3 src/ml/hawkes --config config/development/hawkes_config.json
-$ python3 src/ml/predictor --config config/development/predictor_config.json
-$ python3 src/ml/learner --config config/development/learner_config.json
+for component in hawkes predictor learner
+do
+    python3 src/ml/${component} --config config/development/${component}_config.json
+end
 ```
 To deploy it on a cluster instead, you first need to login to the gitlab registery:
 ```
@@ -141,8 +143,10 @@ $ kubectl create secret generic regcred \
 
 Then you can run the following:
 ```
-$ kubectl -f create deployments/tweet-collector/deployment.yaml
-$ kubectl -f create deployments/tweet-generator/deployment.yaml
+for component in generator collector hawkes predictor learner
+do
+    kubectl -f create deployments/tweet-$component/deployment.yaml
+end
 ```
 
 To deploy the monitoring components on a namespace, you can run

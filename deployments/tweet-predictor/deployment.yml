@@ -1,27 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tweet-estimator-0
-spec:
+  name: tweet-predictor-600
   replicas: 1
   selector:
     matchLabels:
-      app: tweet-estimator-0
+      app: tweet-predictor-600
   template:
     metadata:
-      name: tweet-estimator-0
+      name: tweet-predictor-600-pod
       labels:
-        app: tweet-estimator-0
+        app: tweet-predictor-600
     spec:
       containers:
-      - name:  tweet-estimator-container 
+      - name: tweet-predictor-container
         image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweet-python
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /logs
           name: logs
-        command: ["hawkes"]
-        args : ["--config /config/deployment/hawkes_config.json","--partition 0"]
+        command: ["predictor"]
+        args : ["--config /config/deployment/predictor_config.json","--obs-window 600"]
         restartPolicy: OnFailure
       imagePullSecrets:
       - name: regcred
@@ -30,32 +29,30 @@ spec:
           hostPath:
             path: /logs
             type: DirectoryOrCreate
-
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tweet-estimator-1
-spec:
+  name: tweet-predictor-1200
   replicas: 1
   selector:
     matchLabels:
-      app: tweet-estimator-1
+      app: tweet-predictor-1200
   template:
     metadata:
-      name: tweet-estimator-1
+      name: tweet-predictor-1200-pod
       labels:
-        app: tweet-estimator-1
+        app: tweet-predictor-1200
     spec:
       containers:
-      - name:  tweet-estimator-container 
+      - name: tweet-predictor-container
         image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweet-python
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /logs
           name: logs
-        command: ["hawkes"]
-        args : ["--config /config/deployment/hawkes_config.json","--partition 1"]
+        command: ["predictor"]
+        args : ["--config /config/deployment/predictor_config.json","--obs-window 1200"]
         restartPolicy: OnFailure
       imagePullSecrets:
       - name: regcred

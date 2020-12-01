@@ -83,9 +83,11 @@ build_images:
     - echo "building the images"
     - docker build -f deployments/tweet-collector/Dockerfile -t $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tweet-collector .
     - docker build -f deployments/tweet-generator/Dockerfile -t $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tweet-generator .
+    - docker build -f deployments/tweet-python/Dockerfile -t $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tweet-python .
     - echo "pushing the images"
     - docker push $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tweet-collector
     - docker push $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tweet-generator
+    - docker push $CI_REGISTRY/$CI_REGISTRY_USER/$CI_REGISTRY_IMAGE/tweet-python
 
 upload:
   stage: deploy
