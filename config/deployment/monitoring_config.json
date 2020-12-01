@@ -1,0 +1,5 @@
+{
+    "bootstrap_servers": ["localhost:9092"],
+    "consumer_topic": "stats",
+    "update_period": 10
+}
