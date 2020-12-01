@@ -3,5 +3,10 @@
     "consumer_topic": ["cascade_properties","models"],
     "alert_limit": 100000,
     "alpha": 2.3,
-    "mu": 10
+    "mu": 10,
+    "obs_map": 
+        {
+            "600": 0,
+            "1200": 1
+        }
 }

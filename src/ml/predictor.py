@@ -3,8 +3,9 @@ import json
 import pickle
 import argparse
 import sklearn
+from collections import defaultdict
 
-from kafka import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer, KafkaConsumer, TopicPartition
 from sklearn.ensemble import RandomForestRegressor
 
 from ml.utils.logger import get_logger
@@ -41,38 +42,25 @@ def prediction(params, history, alpha, mu, t):
 def init_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--broker-list", type=str, required=False, help="the broker list")
-    parser.add_argument("--config", type=str, required=True, help="the broker list")
-    parser.add_argument('--obs-window', type=str,help="The observation window",required=True)
+    parser.add_argument("--config", type=str, required=True, help="the path of the config file")
+    parser.add_argument('--obs-window', type=str, help="the observation window", required=True)
     return parser.parse_args()
 
 def main():
     args = init_parser()
     config = init_config(args)
 
-    
-    # consumerproperties = KafkaConsumer(config["consumer_topic"][0],bootstrap_servers =config["bootstrap_servers"],                       
-    #         value_deserializer=lambda v: json.loads(v.decode('utf-8')),  
-    #         key_deserializer= lambda v: v.decode()
-    # )
-
-    # consumermodels = KafkaConsumer(config["consumer_topic"][1],bootstrap_servers =config["bootstrap_servers"],
-    #         value_deserializer=lambda v: pickle.loads(v),  
-    #         key_deserializer= lambda v: v.decode(),        
-    #         group_id="estimators-window-{}".format(args.obs_window) 
-    # )
-
+    partition = config["obs_map"][config["obs_window"]]
     consumer = KafkaConsumer(
-        *config["consumer_topic"],
         bootstrap_servers=config["bootstrap_servers"],
         key_deserializer= lambda v: v.decode(),
-        group_id="estimators-window-{}".format(args.obs_window) 
     )
+    consumer.assign([TopicPartition(topic, partition) for topic in config["consumer_topic"]])
 
     producer_samples = KafkaProducer(
-            bootstrap_servers = config["bootstrap_servers"],
+            bootstrap_servers=config["bootstrap_servers"],
             value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-            key_serializer=str.encode,
-            group_id="estimators-window-{}".format(args.obs_window))
+            key_serializer=str.encode)
 
     producer_alerts = KafkaProducer(
             bootstrap_servers = config["bootstrap_servers"],
@@ -84,8 +72,7 @@ def main():
 
     regressor = RandomForestRegressor()
 
-    n_true = {}
-    n_tots = {}
+    sizes = defaultdict(dict)
     forest_inputs = {}
 
     #time_to_id = {time:idx for idx, time in enumerate(config["times"])}
@@ -103,51 +90,15 @@ def main():
             logger.info("Updated model received")
 
         ###################   SIZE
+        t = message.key
+        tweet_id = mess['cid']
+
         if mess['type'] == 'size':
-            # When we receive the final size of a cascade, we compute the stats and the samples
-
-            tweet_id = mess['cid']
-            n_true[tweet_id] = mess['n_tot']
-            t = message.key
-
-            print("time: ", message.key)
-
-            n_tot = n_tots.get(tweet_id, 0)
-
-            if n_tot == 0:
-                logger.warning("Prediction unavailable for tweet {}, skipping sample and stat messages".format(tweet_id))
-                continue
-
-            are = abs(n_tot - n_true[tweet_id]) / n_true[tweet_id]
-
-            stat_message = {
-                'type': 'stat',
-                'cid': tweet_id,
-                'T_obs': t,
-                'ARE': are
-            }
-
-            producer_alerts.send('stats', key=None, value=stat_message)
-            producer_alerts.flush()
-            beta, n_star, G1, n_obs = forest_inputs[tweet_id]
-
-            W = (n_true[tweet_id] - n_obs) * (1 - n_star) / G1
-
-            sample_message = {
-                'type': 'sample',
-                'cid': tweet_id,
-                'X': (beta, n_star, G1),
-                'W': W
-            }
-
-            producer_samples.send('samples', key = args.obs_window, value = sample_message)
-            producer_samples.flush()
-            logger.info("Stats and sample produced for tweet {} at time {}".format(tweet_id, t))
+            # When we receive the final size of a cascade, we store it
+            sizes[tweet_id]["real"] = mess['n_tot']
 
         if mess['type'] == "parameters":
 
-            print(mess)
-            t = message.key
             G1 = mess['G1']
             n_star = mess['n_star']
             tweet_id = mess['cid']
@@ -161,7 +112,7 @@ def main():
             except:
                 n_tot = n_obs + G1 / (1 - n_star)
 
-            n_tots[tweet_id] = n_tot
+            sizes[tweet_id]["prediction"] = n_tot
 
             forest_inputs[tweet_id] = [beta, n_star, G1, n_obs]
 
@@ -179,7 +130,35 @@ def main():
 
             if n_tot > alert_limit:
                 logger.warning("Tweet {} may create an important cascade with {} retweets predicted".format(tweet_id, n_tot))
-            
+
+        if len(sizes[tweet_id].keys()) == 2:
+            true_size = sizes[tweet_id]["real"]
+            pred_size = sizes[tweet_id]["prediction"]
+            are = abs(pred_size - true_size) / true_size
+
+            stat_message = {
+                    'type': 'stat',
+                    'cid': tweet_id,
+                    'T_obs': t,
+                    'ARE': are
+                    }
+
+            producer_alerts.send('stats', key=None, value=stat_message)
+            producer_alerts.flush()
+            beta, n_star, G1, n_obs = forest_inputs[tweet_id]
+
+            W = (true_size- n_obs) * (1 - n_star) / G1
+
+            sample_message = {
+                    'type': 'sample',
+                    'cid': tweet_id,
+                    'X': (beta, n_star, G1),
+                    'W': W
+                    }
+
+            producer_samples.send('samples', key=args.obs_window, value=sample_message)
+            producer_samples.flush()
+            logger.info("Stats and sample produced for tweet {} at time {}".format(tweet_id, t))
 
 if __name__ == '__main__':
     main()

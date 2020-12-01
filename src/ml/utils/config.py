@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 
 def init_config(args):
@@ -10,4 +11,4 @@ def init_config(args):
     for k, v in vars(args).items():
         if k != "config":
             config[k] = v
-    return config
+    return defaultdict(lambda: None, config)

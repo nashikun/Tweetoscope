@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cctype>
 #include <cppkafka/configuration.h>
 #include <cppkafka/cppkafka.h>
 #include <cppkafka/message_builder.h>
+#include <string>
 
 #include "Logger.hpp"
 #include "TweetCollector/TweetCollectorParams.hpp"
@@ -31,11 +33,12 @@ namespace kafka
          * @param topic The topic to send the message to
          * @param key The message key
          * @param payload The message body
+         * @param partition The message partition
          */
-        void send_message(const std::string& topic, const std::string payload, const std::string& key)
+        void send_message(const std::string& topic, const std::string payload, const std::string& key, int partition=0) noexcept
         {
-            LOG_TRACE("Sent message on topic: " + topic + " with key: " + key + " and payload: " + payload);
-            producer.produce(cppkafka::MessageBuilder(topic).key(key).payload(payload));
+            LOG_TRACE("Sent message on topic: " + topic + " with key: " + key + " and payload: " + payload + " on partition: " + std::to_string(partition));
+            producer.produce(cppkafka::MessageBuilder(topic).key(key).partition(partition).payload(payload));
         }
 
         private:

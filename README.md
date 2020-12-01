@@ -67,7 +67,7 @@ $ apt-get install -y librdkafka-dev
 ```
 
 #### Learner, Predictor and Estimator
-To run thee components, you can install the requirements using pip. When in the root of the project, run:
+To run these components, you can install the requirements using pip. When in the root of the project, run:
 ```
 $ pip3 install -r requirements.txt
 ```
@@ -90,6 +90,14 @@ $ make
 ```
 This will generate the executables in the `/build` folder.
 
+#### Installing the python package
+
+As usual with python, you don't need to install the package to run it. But for ease of use, you can install the package directly using pip:
+
+```
+$ pip3 install Tweetoscope-2020-06
+```
+You can also find the Pypi page of the project <a href="https://pypi.org/project/Tweetoscope-2020-06/">here</a>
 #### Building the docker images
 The docker images containing the latest version of the executables can be found at 
 `gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/component-name` where `component-name` is the name of the component.
@@ -103,7 +111,7 @@ Where `component-name` is similarly the name of the component. The tagging is to
 
 To try the project locally, you can run it with the `config/development` configurations.
 
-You can do so as follows, after having compiled the project:
+For the cpp components, you can do so as follows, after having compiled the project:
 ```
 $ cd build
 $ ./scripts/kafka.sh start --zooconfig ./config/development/zookeeper.properties --serverconfig ./config/development/server.properties
@@ -111,7 +119,27 @@ $ ./TweetGenerator config/development/params.config
 $ ./TweetCollector config/development/collector.ini
 ```
 
-To deploy it on a cluster instead, you can do the following:
+For the ML cmponents, if you have installed the pip package, you can do:
+```
+$ hawkes --config config/development/hawkes_config.json
+$ predictor --config config/development/predictor_config.json
+$ learner --config config/development/learner_config.json
+```
+otherwise:
+```
+$ python3 src/ml/hawkes --config config/development/hawkes_config.json
+$ python3 src/ml/predictor --config config/development/predictor_config.json
+$ python3 src/ml/learner --config config/development/learner_config.json
+```
+To deploy it on a cluster instead, you first need to login to the gitlab registery:
+```
+$ docker login docker login gitlab-student.centralesupelec.fr:4567
+$ kubectl create secret generic regcred \
+    --from-file=.dockerconfigjson=path/to/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson
+```
+
+Then you can run the following:
 ```
 $ kubectl -f create deployments/tweet-collector/deployment.yaml
 $ kubectl -f create deployments/tweet-generator/deployment.yaml

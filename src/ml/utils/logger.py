@@ -1,5 +1,6 @@
 import argparse, os, atexit
 import logging
+from logging import handlers
 import json
 import time
 import textwrap
@@ -13,13 +14,13 @@ default_log_topic = "logs"
 
 class KafkaHandler(logging.Handler):
     """Class to instantiate the kafka logging facility."""
-
     def __init__(self, hostlist, topic='logs', tls=None):
         """Initialize an instance of the kafka handler."""
         logging.Handler.__init__(self)
-        self.producer = KafkaProducer(bootstrap_servers=hostlist,
-                                      value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                                      linger_ms=10)
+        self.producer = KafkaProducer(
+            bootstrap_servers=hostlist,
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            linger_ms=10)
         self.topic = topic
         self.record = None
 
@@ -33,11 +34,13 @@ class KafkaHandler(logging.Handler):
             # apply the logger formatter
             msg = self.format(record)
 
-            self.producer.send(self.topic, {
-                't': int(time.time()),
-                'source': record.name,
-                'level': record.levelname,
-                'message': msg})
+            self.producer.send(
+                self.topic, {
+                    't': int(time.time()),
+                    'source': record.name,
+                    'level': record.levelname,
+                    'message': msg
+                })
             self.flush(timeout=1.0)
         except Exception:
             logging.Handler.handleError(self, record)
@@ -58,7 +61,11 @@ class KafkaHandler(logging.Handler):
             self.release()
 
 
-def get_logger(name, debug=False, topic=default_log_topic, broker_list=default_broker_list, levels=[]):
+def get_logger(name,
+               debug=False,
+               topic=default_log_topic,
+               broker_list=default_broker_list,
+               levels=[]):
     logger = logging.getLogger(name)
     if debug:
         level = logging.DEBUG
@@ -66,17 +73,23 @@ def get_logger(name, debug=False, topic=default_log_topic, broker_list=default_b
         level = logging.INFO
     logger.setLevel(level)
 
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('{} - %(levelname)-8s | %(message)s'.format(name))
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    formatter = logging.Formatter(
+        '[%(asctime)s] {%(thread)s} <%(levelname)s> (%(filename)s:%(lineno)d) - %(message)s',
+        '%Y-%m-%d %H:%M:%S')
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
 
-    ch = KafkaHandler(broker_list, topic=topic)
-    ch.setLevel(level)
-    formatter = logging.Formatter('%(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    kh = KafkaHandler(broker_list, topic=topic)
+    kh.setLevel(level)
+    kh.setFormatter(formatter)
+    logger.addHandler(kh)
+
+    fh = handlers.TimedRotatingFileHandler("logs/" + name)
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
     logger.info("Logging on.")
     atexit.register(lambda: logger.info("Logging off."))
@@ -85,13 +98,38 @@ def get_logger(name, debug=False, topic=default_log_topic, broker_list=default_b
 
 class Logger:
     default_columns = [
-        {"field": "t", "length": 5, "align": ">", "name": "time"},
-        {"field": "source", "length": 9, "align": "^", "name": "source"},
-        {"field": "level", "length": 8, "align": "^", "name": "level"},
-        {"field": "message", "length": None, "align": "<", "name": "message"},
+        {
+            "field": "t",
+            "length": 5,
+            "align": ">",
+            "name": "time"
+        },
+        {
+            "field": "source",
+            "length": 9,
+            "align": "^",
+            "name": "source"
+        },
+        {
+            "field": "level",
+            "length": 8,
+            "align": "^",
+            "name": "level"
+        },
+        {
+            "field": "message",
+            "length": None,
+            "align": "<",
+            "name": "message"
+        },
     ]
 
-    def __init__(self, columns=default_columns, log_sep=None, skip_line=True, levels={}, sources={}):
+    def __init__(self,
+                 columns=default_columns,
+                 log_sep=None,
+                 skip_line=True,
+                 levels={},
+                 sources={}):
 
         self.columns = columns
         self.elastic_columns = {}
@@ -160,7 +198,8 @@ class Logger:
         format_strings = []
         max_lines_nb = 0
         for i, col in enumerate(self.columns):
-            width = col['length'] if col['length'] is not None else remaining_width
+            width = col['length'] if col[
+                'length'] is not None else remaining_width
             lines = values[i].split("\n")
             lines = [l for line in lines for l in textwrap.wrap(line, width)]
             format_string = "{{:{}{}}}".format(col['align'], width)
@@ -206,15 +245,18 @@ def preprocess_time():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--broker-list', type=str,
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('--broker-list',
+                        type=str,
                         help="The broker list. It could be either \n"
-                             " - a filepath : containing a comma separated list"
-                             " of brokers\n"
-                             " - a comma separated list of brokers, e.g. "
-                             " localhost:9091,localhost:9092\n",
+                        " - a filepath : containing a comma separated list"
+                        " of brokers\n"
+                        " - a comma separated list of brokers, e.g. "
+                        " localhost:9091,localhost:9092\n",
                         required=True)
-    parser.add_argument('--logs_topic', type=str,
+    parser.add_argument('--logs_topic',
+                        type=str,
                         default=default_log_topic,
                         help='The topic for listening to logs')
     parser.add_argument('--levels',
@@ -234,22 +276,25 @@ if __name__ == '__main__':
 
     logger.add_preprocessor("t", preprocess_time())
 
-    logger.add_postprocessor("level", postprocess_color({
-        "DEBUG": ["grey"],
-        "INFO": ["green"],
-        "WARNING": ["yellow"],
-        "ERROR": ["red"],
-        "CRITICAL": ["red", "blink"]
-    }))
+    logger.add_postprocessor(
+        "level",
+        postprocess_color({
+            "DEBUG": ["grey"],
+            "INFO": ["green"],
+            "WARNING": ["yellow"],
+            "ERROR": ["red"],
+            "CRITICAL": ["red", "blink"]
+        }))
 
-    logger.add_postprocessor("source", postprocess_color({
-        "collector": ["blue"],
-        "estimator": ["magenta"],
-        "predictor": ["yellow"],
-        "learner": ["cyan"]
-    }))
+    logger.add_postprocessor(
+        "source",
+        postprocess_color({
+            "collector": ["blue"],
+            "estimator": ["magenta"],
+            "predictor": ["yellow"],
+            "learner": ["cyan"]
+        }))
 
     for m in consumer:
         msg = json.loads(m.value.decode('utf8'))
         logger.log(msg)
-
