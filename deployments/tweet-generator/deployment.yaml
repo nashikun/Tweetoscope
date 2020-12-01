@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: tweet-generator
-        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweetgenerator
+        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweet-generator
         imagePullPolicy: Always
       imagePullSecrets:
       - name: regcred

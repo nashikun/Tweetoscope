@@ -4,7 +4,7 @@ import argparse
 
 from sklearn.ensemble import RandomForestRegressor
 
-from kafka import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer, KafkaConsumer, TopicPartition
 
 from ml.utils.logger import get_logger
 from ml.utils.config import init_config
@@ -20,27 +20,18 @@ def init_parser():
     parser.add_argument("--config",
                         type=str,
                         required=True,
-                        help="the broker list")
+                        help="the path of the config file")
     return parser.parse_args()
 
 
 def main():
     args = init_parser()
     config = init_config(args)
-
-    consumer = KafkaConsumer(
-        "samples",
-        bootstrap_servers=config["bootstrap_servers"],
-        group_id="estimators-window-{}".format(args.obs_window)
-        )
+    consumer = KafkaConsumer(config["consumer_topic"],
+                             bootstrap_servers=config["bootstrap_servers"])
     producer = KafkaProducer(
         bootstrap_servers=config["bootstrap_servers"],
-        value_serializer=lambda v: json.dumps(v).encode('utf-8')
-        )
-
-    # regressors = {time: RandomForestRegressor() for time in config["times"]}
-    # train_X = {time: RandomForestRegressor() for time in config["times"]}
-    # train_y = {time: RandomForestRegressor() for time in config["times"]}
+        value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
     regressor = RandomForestRegressor()
     train_X = []
@@ -63,13 +54,19 @@ def main():
         train_X[t].append(inputs)
         train_y[t].append(W)
 
-        if len(train_X[t]) % update_size == 0:
+        if not len(train_X[t]) % update_size:
 
             regressors[t].fit(train_X[t], train_y[t])
 
-            regressor_message = {"type": "model", "regressor": pickle.dumps(regressors)}
+            regressor_message = {
+                "type": "model",
+                "regressor": pickle.dumps(regressors)
+            }
 
-            producer.send('models', key=t, value=regressor_message)
+            producer.send('models',
+                          key=t,
+                          value=regressor_message,
+                          partition=message.partition)
 
             logger.info("Model {}s updated and sent".format(t))
 

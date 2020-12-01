@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: tweetcollector
-        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweetcollector
+        image: gitlab-student.centralesupelec.fr:4567/tweetoscope-mullticolore/tweetou/tweet-collector
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /logs

@@ -6,7 +6,7 @@ import scipy.optimize as optim
 
 import re
 
-from kafka import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer, KafkaConsumer, TopicPartition
 
 from ml.utils.logger import get_logger
 from ml.utils.config import init_config
@@ -123,7 +123,8 @@ def prediction(params, history, alpha, mu, t):
 def init_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--broker-list", type=str, required=False, help="the broker list")
-    parser.add_argument("--config", type=str, required=True, help="the broker list")
+    parser.add_argument("--config", type=str, required=True, help="the path of the config file")
+    parser.add_argument("--partition", type=int, required=True, help="the broker list")
     return parser.parse_args()
 
 
@@ -131,10 +132,9 @@ def main():
     args = init_parser()
     config = init_config(args)
     logger = get_logger('hawkes', broker_list=config["bootstrap_servers"], debug=True)
-    consumer = KafkaConsumer(config["consumer_topic"], bootstrap_servers=config["bootstrap_servers"])
-
-    producer = KafkaProducer(bootstrap_servers=config["bootstrap_servers"], value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-                             key_serializer=lambda v : json.dumps(v).encode("utf-8"))
+    consumer = KafkaConsumer(bootstrap_servers=config["bootstrap_servers"])
+    consumer.assign([TopicPartition(config["consumer_topic"], config["partition"])])
+    producer = KafkaProducer(bootstrap_servers=config["bootstrap_servers"], value_serializer=lambda v: json.dumps(v).encode("utf-8"), key_serializer=lambda v: json.dumps(v).encode("utf-8"))
 
     alpha = config["alpha"]
     mu = config["mu"]
@@ -144,7 +144,6 @@ def main():
 
         mess = eval(mess)
                 
-        print(mess)
         cascade = np.array(mess["tweets"])
         tweet_id = mess["cid"]
         text = mess["msg"]
@@ -167,7 +166,7 @@ def main():
             "n_star": n_star
             }
         
-        producer.send(config["producer_topic"], key=T_obs, value=messfinal)
+        producer.send(config["producer_topic"], key=T_obs, value=messfinal, partition=config["partition"])
 
         logger.info("Predicted params p = {} and beta = {} for tweet {} at time {}".format(p_est, beta_est, tweet_id, T_obs))
 

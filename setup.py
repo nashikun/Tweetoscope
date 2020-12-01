@@ -1,10 +1,8 @@
 from setuptools import setup, find_packages
 import sys, os
 
-with open('requirements.txt', 'r') as f:
-    reqs = f.read()
-
 version = '${PROJECT_VERSION}'
+requirements = """${PYTHON_REQUIREMENTS}""".split('\n')
 
 setup(
     name='${PROJECT_NAME}',
@@ -21,7 +19,8 @@ setup(
         'console_scripts': [
             'learner = ml.learner:main',
             'hawkes = ml.hawkes:main',
+            'predictor = ml.predictor:main',
         ],
     },
-    install_requires=reqs,
+    install_requires=requirements,
 )
