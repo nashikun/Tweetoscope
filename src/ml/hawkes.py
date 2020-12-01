@@ -179,7 +179,7 @@ def main():
         
         producer.send(config["producer_topic"], key=T_obs, value=messfinal, partition=config["partition"])
 
-        logger.info("Predicted params p = {} and beta = {} for tweet {} at time {}".format(p_est, beta_est, tweet_id, T_obs))
+        logger.info("Predicted params p = {: .3f} and beta = {: .3f} for tweet {} at time {}".format(p_est, beta_est, tweet_id, T_obs))
 
 if __name__ == '__main__':
     main()
