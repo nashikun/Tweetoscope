@@ -115,24 +115,27 @@ For the cpp components, you can do so as follows, after having compiled the proj
 ```
 $ cd build
 $ ./scripts/kafka.sh start --zooconfig ./config/development/zookeeper.properties --serverconfig ./config/development/server.properties
-$ ./TweetGenerator config/development/params.config 
+$ ./TweetGenerator config/development/params.config > /dev/null &
 $ ./TweetCollector config/development/collector.ini
 ```
 
-For the ML cmponents, if you have installed the pip package, you can do:
+For the ML cmponents, if you have installed the pip package, you can run all the components in the same terminal using:
 ```
 for component in hawkes predictor learner
 do
-    ${component} --config config/development/${component}_config.json
+    ${component} --config config/development/${component}_config.json > /dev/null &
 end
 ```
-otherwise:
+otherwise you can use:
 ```
 for component in hawkes predictor learner
 do
-    python3 src/ml/${component} --config config/development/${component}_config.json
+    python3 src/ml/${component} --config config/development/${component}_config.json > /dev/null &
 end
 ```
+The logs will be saved in the `logs/` folder. Alternatively, you can run the scripts on separate terminals on foreground to monitor the execution.
+
+
 To deploy it on a cluster instead, you first need to login to the gitlab registery:
 ```
 $ docker login gitlab-student.centralesupelec.fr:4567
