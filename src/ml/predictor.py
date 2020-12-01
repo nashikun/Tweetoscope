@@ -2,6 +2,7 @@ import numpy as np
 import json
 import pickle
 import argparse
+import sklearn
 
 from kafka import KafkaProducer, KafkaConsumer
 from sklearn.ensemble import RandomForestRegressor
@@ -35,49 +36,87 @@ def prediction(params, history, alpha, mu, t):
     mis = history[I,1]
     G1 = p * np.sum(mis * np.exp(-beta * (t - tis)))
     Ntot = n + G1 / (1. - n_star)
-    return Ntot
+    return Ntot, G1, n_star
 
 def init_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--broker-list", type=str, required=False, help="the broker list")
     parser.add_argument("--config", type=str, required=True, help="the broker list")
+    parser.add_argument('--obs-window', type=str,help="The observation window",required=True)
     return parser.parse_args()
 
 def main():
     args = init_parser()
     config = init_config(args)
-    consumer = KafkaConsumer(*config["consumer_topic"],bootstrap_servers=config["bootstrap_servers"], value_deserializer=lambda v: json.loads(v.decode('utf-8')))
 
-    producer = KafkaProducer(bootstrap_servers=config["bootstrap_servers"], value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+    
+    # consumerproperties = KafkaConsumer(config["consumer_topic"][0],bootstrap_servers =config["bootstrap_servers"],                       
+    #         value_deserializer=lambda v: json.loads(v.decode('utf-8')),  
+    #         key_deserializer= lambda v: v.decode()
+    # )
+
+    # consumermodels = KafkaConsumer(config["consumer_topic"][1],bootstrap_servers =config["bootstrap_servers"],
+    #         value_deserializer=lambda v: pickle.loads(v),  
+    #         key_deserializer= lambda v: v.decode(),        
+    #         group_id="estimators-window-{}".format(args.obs_window) 
+    # )
+
+    consumer = KafkaConsumer(
+        *config["consumer_topic"],
+        bootstrap_servers=config["bootstrap_servers"],
+        key_deserializer= lambda v: v.decode(),
+        group_id="estimators-window-{}".format(args.obs_window) 
+    )
+
+    producer_samples = KafkaProducer(
+            bootstrap_servers = config["bootstrap_servers"],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            key_serializer=str.encode,
+            group_id="estimators-window-{}".format(args.obs_window))
+
+    producer_alerts = KafkaProducer(
+            bootstrap_servers = config["bootstrap_servers"],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
     alpha = config["alpha"]
     mu = config["mu"]
     alert_limit = config["alert_limit"]
 
-    regressors = {time: RandomForestRegressor() for time in config["times"]}
+    regressor = RandomForestRegressor()
 
     n_true = {}
     n_tots = {}
     forest_inputs = {}
 
-    time_to_id = {time:idx for idx, time in enumerate(config["times"])}
+    #time_to_id = {time:idx for idx, time in enumerate(config["times"])}
 
     logger = get_logger('predictor', broker_list=config["bootstrap_servers"], debug=True)
 
     for message in consumer:
 
-        if message.value['type'] == 'model':
-            regressors = pickle.loads(message.value['regressors'])
-            logger.info("Updated models received")
+        mess = message.value.decode().replace("'", '"')
+        mess = json.loads(mess)
 
-        if message.value['type'] == 'size':
+        ###################   MODEL
+        if mess['type'] == 'model':
+            regressor = pickle.loads(message.value['regressors'])
+            logger.info("Updated model received")
+
+        ###################   SIZE
+        if mess['type'] == 'size':
             # When we receive the final size of a cascade, we compute the stats and the samples
 
-            tweet_id = message.value['cid']
-            n_true[tweet_id] = message.value['n_tot']
+            tweet_id = mess['cid']
+            n_true[tweet_id] = mess['n_tot']
             t = message.key
 
-            n_tot = n_tots[tweet_id][time_to_id[t]]
+            print("time: ", message.key)
+
+            n_tot = n_tots.get(tweet_id, 0)
+
+            if n_tot == 0:
+                logger.warning("Prediction unavailable for tweet {}, skipping sample and stat messages".format(tweet_id))
+                continue
 
             are = abs(n_tot - n_true[tweet_id]) / n_true[tweet_id]
 
@@ -88,9 +127,9 @@ def main():
                 'ARE': are
             }
 
-            producer.send('stats', stat_message)
-
-            beta, n_star, G1, n_obs = forest_inputs[tweet_id][time_to_id[t]]
+            producer_alerts.send('stats', key=None, value=stat_message)
+            producer_alerts.flush()
+            beta, n_star, G1, n_obs = forest_inputs[tweet_id]
 
             W = (n_true[tweet_id] - n_obs) * (1 - n_star) / G1
 
@@ -101,26 +140,30 @@ def main():
                 'W': W
             }
 
-            producer.send('sample', key = t, value = sample_message)
-
+            producer_samples.send('samples', key = args.obs_window, value = sample_message)
+            producer_samples.flush()
             logger.info("Stats and sample produced for tweet {} at time {}".format(tweet_id, t))
 
-        if message.value['type'] == "parameters":
+        if mess['type'] == "parameters":
 
-            print(message.value)
+            print(mess)
             t = message.key
-            G1 = message.value['G1']
-            n_star = message.value['n_star']
-            tweet_id = message.value['cid']
-            p, beta = message.value['params']
-            msg = message.value['msg']
-            n_obs = message.value['n_obs']
+            G1 = mess['G1']
+            n_star = mess['n_star']
+            tweet_id = mess['cid']
+            p, beta = mess['params']
+            msg = mess['msg']
+            n_obs = mess['n_obs']
 
-            n_tot = regressors[t].predict(beta, n_star, G1)
+            try:
+                sklearn.utils.validation.check_is_fitted(regressor)
+                n_tot = regressor.predict((beta, n_star, G1))
+            except:
+                n_tot = n_obs + G1 / (1 - n_star)
 
-            n_tots[tweet_id] = n_tots.get(tweet_id, [])+[n_tot]
+            n_tots[tweet_id] = n_tot
 
-            forest_inputs[tweet_id] = forest_inputs.get(tweet_id, []) + [(beta, n_star, G1, n_obs)]
+            forest_inputs[tweet_id] = [beta, n_star, G1, n_obs]
 
             alert_message = {
                 'type': 'alert',
@@ -130,8 +173,8 @@ def main():
                 'n_tot': n_tot,
             }
 
-            producer.send('alerts', alert_message)
-
+            producer_alerts.send('alerts', key=None, value=alert_message)
+            producer_alerts.flush()
             logger.info("Alert produced for tweet {} at time {}".format(tweet_id, t))
 
             if n_tot > alert_limit:

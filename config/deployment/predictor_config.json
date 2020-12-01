@@ -1,6 +1,6 @@
 {
     "bootstrap_servers": ["kafka-service:9092"],
-    "consumer_topic": ["cascade_properties",
+    "consumer_topic": ["cascade_properties","models"],
     "alert_limit": 100000,
     "alpha": 2.3,
     "mu": 10,
