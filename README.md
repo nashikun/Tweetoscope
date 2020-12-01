@@ -20,7 +20,7 @@
 
 ## About the project
 
-This is a chool project for CentraleSupelec's SDI major.
+This is a cool project for CentraleSupelec's SDI major.
 You can find more information <a href="http://sdi.metz.centralesupelec.fr/spip.php?article25">here</a>
 
 ## Getting Started
@@ -228,16 +228,20 @@ You can find more information on the <a href="#documentation">documentation</a>
 ### ML source files
 The ML source files are structured as follow:
 ```
+├── dashboard.py
 ├── hawkes.py
 ├── __init__.py
 ├── learner.py
+├── monitor.py
 ├── predictor.py
 └── utils
     ├── config.py
     ├── __init__.py
     └── logger.py
 ```
+- dashboard: Collects the alerts and highlights the potential big cascades
 - hawkes: The cascade parameter estimator
 - learner: The random forest learner
+- monitor: Collects the metrics, shows the mean error and the mean error on the last samples
 - predictor: Predicts the total number of tweets and sends the statistics and alerts
 - utlls: Contains a few miscelaneous and useful functions
