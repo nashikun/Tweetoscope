@@ -81,7 +81,7 @@ data:
     - job_name: logs
       pipeline_stages:
         - regex:
-            expression: '\[(?P<Ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] {(?P<ThreadId>[0-9a-fx]+)} <(?P<level>\w+)> \((?P<File>[a-zA-Z_.]+):(?P<Line>\d+)\) - (?P<Message>.*)'
+            expression: '\[(?P<Ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] {(?P<ThreadId>[0-9a-z]+)} <(?P<level>\w+)> \((?P<File>[a-zA-Z_.]+):(?P<Line>\d+)\) - (?P<Message>.*)'
         - timestamp:
             source: Ts
             format: 2006-01-02 15:04:05
