@@ -1,5 +1,7 @@
 {
     "bootstrap_servers": ["localhost:9092"],
     "update_size": 5,
+    "consumer_topic": "samples",
+    "producer_topic": "models",   
     "times": [300, 600, 1200, 1800]
 }

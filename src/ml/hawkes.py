@@ -118,7 +118,7 @@ def prediction(params, history, alpha, mu, t):
     G1 = p * np.sum(mis * np.exp(-beta * (t - tis)))
     Ntot = n + G1 / (1. - n_star)
 
-    return Ntot
+    return Ntot, G1, n_star
 
 def init_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -154,9 +154,18 @@ def main():
         LL = loglikelihood((p, beta), cascade, t)
         LL_MLE,MLE = compute_MLE(cascade, t, alpha, mu)
         p_est, beta_est = MLE
-        N = prediction([p_est, beta_est], cascade, alpha, mu, t)
+        N, G1, n_star = prediction([p_est, beta_est], cascade, alpha, mu, t)
 
-        messfinal = {"type": "parameters","cid": tweet_id, "msg":text, "n_obs": len(cascade),"n_supp": N, "params": list(MLE)}
+        messfinal = {
+            "type": "parameters",
+            "cid": tweet_id,
+            "msg":text,
+            "n_obs": len(cascade),
+            "n_supp": N,
+            "params": list(MLE),
+            "G1": G1,
+            "n_star": n_star
+            }
         
         producer.send(config["producer_topic"], key=T_obs, value=messfinal)
 

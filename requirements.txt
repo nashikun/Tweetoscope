@@ -1,2 +1,7 @@
 kafka-python
 termcolor
+kafka
+numpy
+pandas
+scikit-learn
+scipy

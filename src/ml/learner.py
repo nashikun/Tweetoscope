@@ -28,13 +28,23 @@ def main():
     args = init_parser()
     config = init_config(args)
 
-    consumer = KafkaConsumer("samples",
-                             bootstrap_servers=config["bootstrap_servers"])
-    producer = KafkaProducer(bootstrap_servers=config["bootstrap_servers"])
+    consumer = KafkaConsumer(
+        "samples",
+        bootstrap_servers=config["bootstrap_servers"],
+        group_id="estimators-window-{}".format(args.obs_window)
+        )
+    producer = KafkaProducer(
+        bootstrap_servers=config["bootstrap_servers"],
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
 
-    regressors = {time: RandomForestRegressor() for time in config["times"]}
-    train_X = {time: RandomForestRegressor() for time in config["times"]}
-    train_y = {time: RandomForestRegressor() for time in config["times"]}
+    # regressors = {time: RandomForestRegressor() for time in config["times"]}
+    # train_X = {time: RandomForestRegressor() for time in config["times"]}
+    # train_y = {time: RandomForestRegressor() for time in config["times"]}
+
+    regressor = RandomForestRegressor()
+    train_X = []
+    train_y = []
 
     # Set the frequence of trainings of each random forest
     update_size = config["update_size"]
@@ -57,9 +67,9 @@ def main():
 
             regressors[t].fit(train_X[t], train_y[t])
 
-            regressor_message = pickle.dumps(regressors)
+            regressor_message = {"type": "model", "regressor": pickle.dumps(regressors)}
 
-            producer.send('models', regressor_message)
+            producer.send('models', key=t, value=regressor_message)
 
             logger.info("Model {}s updated and sent".format(t))
 
