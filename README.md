@@ -133,7 +133,7 @@ $ python3 src/ml/learner --config config/development/learner_config.json
 ```
 To deploy it on a cluster instead, you first need to login to the gitlab registery:
 ```
-$ docker login docker login gitlab-student.centralesupelec.fr:4567
+$ docker login gitlab-student.centralesupelec.fr:4567
 $ kubectl create secret generic regcred \
     --from-file=.dockerconfigjson=path/to/.docker/config.json \
     --type=kubernetes.io/dockerconfigjson
@@ -185,7 +185,7 @@ The project is structured as follows:
 ├── scripts
 ├── src
 │   ├── cpp
-│   └── python
+│   └── ml
 └── tests
     ├── cpp
     └── python
@@ -224,4 +224,20 @@ You can find more information on the <a href="#documentation">documentation</a>
 - Producer.hpp similarly defines a wrapper class around CppKafka's producer for ease of use.
 - TweetCollector holds the code for the TweetCollector executable, used for reading tweets from kafka topics and aggregating them into cascades before publishing them.
 - TweetGenerator hols the code for the TweetGenerator executable, which generates fake tweets and publishes them on a kafka topic to simulate real tweets collected from tweeter.
-### Python source files
+
+### ML source files
+The ML source files are structured as follow:
+```
+├── hawkes.py
+├── __init__.py
+├── learner.py
+├── predictor.py
+└── utils
+    ├── config.py
+    ├── __init__.py
+    └── logger.py
+```
+- hawkes: The cascade parameter estimator
+- learner: The random forest learner
+- predictor: Predicts the total number of tweets and sends the statistics and alerts
+- utlls: Contains a few miscelaneous and useful functions
