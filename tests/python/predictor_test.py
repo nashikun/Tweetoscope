@@ -1,10 +1,12 @@
 import unittest
 import numpy as np
+import os
 import sys
 
-sys.path.append('src/python/')
+myPath = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, myPath + '/../../src')
 
-import predictor
+from ml import predictor
 
 class PredictorTest(unittest.TestCase):
 
@@ -18,8 +20,8 @@ class PredictorTest(unittest.TestCase):
         p, beta = 0.02, 1./3600
 
         self.assertEqual(
-            [round(predictor.prediction([p, beta], cascade, alpha, mu, t),4) for t in [300,600,1200,1800]],
+            [round(predictor.prediction([p, beta], cascade, alpha, mu, t)[0], 4) for t in [300,600,1200,1800]],
             [290.7797, 285.6802, 285.1896, 281.0748]
             )
-
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()

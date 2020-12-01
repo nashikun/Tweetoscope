@@ -59,7 +59,7 @@ test:
     - docker
   script:
     - echo "Running the python tests"
-    - python3 -m unittest tests
+    - python3 -m unittest tests/python/*_test.py
     - echo "Running the C++ tests"
     - cd build
     - ./scripts/kafka.sh start --zooconfig ./config/test/zookeeper.properties --serverconfig ./config/test/server.properties

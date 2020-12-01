@@ -1,3 +1,6 @@
+"""
+Hawkes Estimator
+"""
 import numpy as np
 import json                       # To parse and dump JSON
 import argparse
@@ -12,13 +15,13 @@ from ml.utils.logger import get_logger
 from ml.utils.config import init_config
 
 def loglikelihood(params, history, t):
-    """
+    """!
     Returns the loglikelihood of a Hawkes process with exponential kernel
     computed with a linear time complexity
         
-    params   -- parameter tuple (p,beta) of the Hawkes process
-    history  -- (n,2) numpy array containing marked time points (t_i,m_i)  
-    t        -- current time (i.e end of observation window)
+    @param params   parameter tuple (p,beta) of the Hawkes process
+    @param history  (n,2) numpy array containing marked time points (t_i,m_i)  
+    @param t        current time (i.e end of observation window)
     """
     
     p,beta = params    
@@ -51,16 +54,16 @@ def loglikelihood(params, history, t):
 def compute_MLE(history, t, alpha, mu,
                 init_params=np.array([0.0001, 1./60]), 
                 max_n_star = 1., display=False):
-    """
+    """!
     Returns the pair of the estimated loglikelihood and parameters (as a numpy array)
 
-    history     -- (n,2) numpy array containing marked time points (t_i,m_i)  
-    t           -- current time (i.e end of observation window)
-    alpha       -- power parameter of the power-law mark distribution
-    mu          -- min value parameter of the power-law mark distribution
-    init_params -- initial values for the parameters (p,beta)
-    max_n_star  -- maximum authorized value of the branching factor (defines the upper bound of p)
-    display     -- verbose flag to display optimization iterations (see 'disp' options of optim.optimize)
+    @param history     (n,2) numpy array containing marked time points (t_i,m_i)  
+    @param t           current time (i.e end of observation window)
+    @param alpha       power parameter of the power-law mark distribution
+    @param mu          min value parameter of the power-law mark distribution
+    @param init_params initial values for the parameters (p,beta)
+    @param max_n_star  maximum authorized value of the branching factor (defines the upper bound of p)
+    @param display     verbose flag to display optimization iterations (see 'disp' options of optim.optimize)
     """
     
     # Define the target function to minimize as minus the loglikelihood
@@ -92,14 +95,14 @@ def compute_MLE(history, t, alpha, mu,
     return(-res.fun, res.x)
 
 def prediction(params, history, alpha, mu, t):
-    """
+    """!
     Returns the expected total numbers of points for a set of time points
     
-    params   -- parameter tuple (p,beta) of the Hawkes process
-    history  -- (n,2) numpy array containing marked time points (t_i,m_i)  
-    alpha    -- power parameter of the power-law mark distribution
-    mu       -- min value parameter of the power-law mark distribution
-    t        -- current time (i.e end of observation window)
+    @param params   parameter tuple (p,beta) of the Hawkes process
+    @param history  (n,2) numpy array containing marked time points (t_i,m_i)  
+    @param alpha    power parameter of the power-law mark distribution
+    @param mu       min value parameter of the power-law mark distribution
+    @param t        current time (i.e end of observation window)
     """
 
     p,beta = params
@@ -121,6 +124,10 @@ def prediction(params, history, alpha, mu, t):
     return Ntot, G1, n_star
 
 def init_parser():
+    """!
+    Initialises parser
+    """
+
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--broker-list", type=str, required=False, help="the broker list")
     parser.add_argument("--config", type=str, required=True, help="the path of the config file")
@@ -129,6 +136,10 @@ def init_parser():
 
 
 def main():
+    """
+    Main predictor function
+    """
+
     args = init_parser()
     config = init_config(args)
     logger = get_logger('hawkes', broker_list=config["bootstrap_servers"], debug=True)

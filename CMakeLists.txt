@@ -31,9 +31,7 @@ include_directories(${GAML_INCLUDE_DIRS})
 add_custom_target(CopyConfig ALL)
 
 message("Copying the python files")
-file(COPY requirements.txt DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY src/ml DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY tests/python DESTINATION ${CMAKE_BINARY_DIR}/tests)
 file(READ requirements.txt PYTHON_REQUIREMENTS)
 configure_file(${CMAKE_SOURCE_DIR}/setup.py ${CMAKE_BINARY_DIR}/setup.py)
 

@@ -1,3 +1,6 @@
+"""
+Tweet predictor
+"""
 import numpy as np
 import json
 import pickle
@@ -12,14 +15,14 @@ from ml.utils.logger import get_logger
 from ml.utils.config import init_config
 
 def prediction(params, history, alpha, mu, t):
-    """
+    """!
     Returns the expected total numbers of points for a set of time points
     
-    params   -- parameter tuple (p,beta) of the Hawkes process
-    history  -- (n,2) numpy array containing marked time points (t_i,m_i)  
-    alpha    -- power parameter of the power-law mark distribution
-    mu       -- min value parameter of the power-law mark distribution
-    t        -- current time (i.e end of observation window)
+    @param params    parameter tuple (p,beta) of the Hawkes process
+    @param history   (n,2) numpy array containing marked time points (t_i,m_i)  
+    @param alpha     power parameter of the power-law mark distribution
+    @param mu        min value parameter of the power-law mark distribution
+    @param t         current time (i.e end of observation window)
     """
 
     p,beta = params
@@ -40,6 +43,10 @@ def prediction(params, history, alpha, mu, t):
     return Ntot, G1, n_star
 
 def init_parser():
+    """!
+    Initialises parser
+    """
+
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--broker-list", type=str, required=False, help="the broker list")
     parser.add_argument("--config", type=str, required=True, help="the path of the config file")
@@ -47,6 +54,10 @@ def init_parser():
     return parser.parse_args()
 
 def main():
+    """
+    Main predictor function
+    """
+
     args = init_parser()
     config = init_config(args)
 
@@ -81,20 +92,22 @@ def main():
 
     for message in consumer:
 
-        mess = message.value.decode().replace("'", '"')
-        mess = json.loads(mess)
+        try:
+            mess = message.value.decode().replace("'", '"')
+            mess = json.loads(mess)
+        except:
+            mess = pickle.loads(message.value)
 
         ###################   MODEL
         if mess['type'] == 'model':
-            regressor = pickle.loads(message.value['regressors'])
+            regressor = mess['regressor']
             logger.info("Updated model received")
 
         ###################   SIZE
         t = message.key
-        tweet_id = mess['cid']
-
         if mess['type'] == 'size':
             # When we receive the final size of a cascade, we store it
+            tweet_id = mess['cid']
             sizes[tweet_id]["real"] = mess['n_tot']
 
         if mess['type'] == "parameters":
