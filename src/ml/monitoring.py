@@ -22,7 +22,7 @@ def main():
     consumer = KafkaConsumer(
         config["consumer_topic"],
         bootstrap_servers=config["bootstrap_servers"],
-        value_deserializer=lambda v: json.loads(v).decode('utf-8')
+        value_deserializer=lambda v: json.loads(v.decode('utf-8'))
         )
 
     are_list = []
@@ -31,11 +31,11 @@ def main():
 
         are_list.append(message.value['ARE'])
 
-        if len(are_list) % config.update_period == 0:
+        if len(are_list) % config["update_period"] == 0:
             print("Mean ARE: {}\nMear ARE on the {} last tweets: {}".format(
                 average(are_list), 
-                config.update_period, 
-                average(are_list[-config.update_period:]))
+                config["update_period"], 
+                average(are_list[-config["update_period"]:]))
                 )
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tweet-predictor-600
+spec:
   replicas: 1
   selector:
     matchLabels:
@@ -20,8 +21,7 @@ metadata:
         - mountPath: /logs
           name: logs
         command: ["predictor"]
-        args : ["--config /config/deployment/predictor_config.json","--obs-window 600"]
-        restartPolicy: OnFailure
+        args : ["--config", "/config/predictor_config.json", "--obs-window", "600"]
       imagePullSecrets:
       - name: regcred
       volumes:
@@ -34,6 +34,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tweet-predictor-1200
+spec:
   replicas: 1
   selector:
     matchLabels:
@@ -52,8 +53,7 @@ metadata:
         - mountPath: /logs
           name: logs
         command: ["predictor"]
-        args : ["--config /config/deployment/predictor_config.json","--obs-window 1200"]
-        restartPolicy: OnFailure
+        args : ["--config", "/config/predictor_config.json","--obs-window", "1200"]
       imagePullSecrets:
       - name: regcred
       volumes:

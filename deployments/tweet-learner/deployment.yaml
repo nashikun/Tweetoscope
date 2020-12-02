@@ -21,8 +21,7 @@ spec:
         - mountPath: /logs
           name: logs
         command: ["learner"]
-        args : ["--config /config/deployment/learner_config.json"]
-        restartPolicy: OnFailure
+        args : ["--config", "/config/learner_config.json"]
       imagePullSecrets:
       - name: regcred
       volumes:

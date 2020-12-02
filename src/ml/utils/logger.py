@@ -86,7 +86,7 @@ def get_logger(name,
     kh.setFormatter(formatter)
     logger.addHandler(kh)
 
-    fh = handlers.TimedRotatingFileHandler("logs/" + name)
+    fh = handlers.TimedRotatingFileHandler(f"logs/{name}.log")
     fh.setFormatter(formatter)
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)

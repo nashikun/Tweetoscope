@@ -1,12 +1,12 @@
 {
-    "bootstrap_servers": ["localhost:9092"],
+    "bootstrap_servers": ["kafka-service:9092"],
     "consumer_topic": ["cascade_properties","models"],
     "alert_limit": 100000,
     "alpha": 2.3,
     "mu": 10,
     "obs_map": 
         {
-            600: 0,
-            1200: 1
+            "600": 0,
+            "1200": 1
         }
 }

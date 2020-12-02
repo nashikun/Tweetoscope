@@ -9,7 +9,7 @@ start_deployments ()
     echo "Starting prometheus"
     kubectl apply -k prometheus -n $1
     echo "Starting kafka"
-    kubectl apply -k kafka -n $1
+    kubectl apply -k kafka
 }
 
 stop_deployments ()
@@ -21,7 +21,7 @@ stop_deployments ()
     echo "Stopping prometheus"
     kubectl delete -k prometheus -n $1
     echo "Stopping kafka"
-    kubectl delete -k kafka -n $1
+    kubectl delete -k kafka
 }
 
 if [ $# -lt 1 ]; then

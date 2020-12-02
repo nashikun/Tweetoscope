@@ -21,8 +21,7 @@ spec:
         - mountPath: /logs
           name: logs
         command: ["hawkes"]
-        args : ["--config /config/deployment/hawkes_config.json","--partition 0"]
-        restartPolicy: OnFailure
+        args : ["--config", "/config/hawkes_config.json","--partition", "0"]
       imagePullSecrets:
       - name: regcred
       volumes:
@@ -55,8 +54,7 @@ spec:
         - mountPath: /logs
           name: logs
         command: ["hawkes"]
-        args : ["--config /config/deployment/hawkes_config.json","--partition 1"]
-        restartPolicy: OnFailure
+        args : ["--config", "/config/hawkes_config.json", "--partition", "1"]
       imagePullSecrets:
       - name: regcred
       volumes:
