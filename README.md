@@ -121,17 +121,20 @@ $ ./TweetCollector config/development/collector.ini
 
 For the ML cmponents, if you have installed the pip package, you can run all the components in the same terminal using:
 ```
-for component in hawkes predictor learner
-do
-    ${component} --config config/development/${component}_config.json > /dev/null &
-end
+hawkes --config config/development/hawkes_config.json --partition 0 > /dev/null &
+hawkes --config config/development/hawkes_config.json --partition 1 > /dev/null &
+predictor --config config/development/hawkes_config.json --obs-window 600 partition > /dev/null &
+predictor --config config/development/hawkes_config.json --obs-window 1200 partition > /dev/null &
+learner --config config/development/learner_config.json > /dev/null &
+
 ```
 otherwise you can use:
 ```
-for component in hawkes predictor learner
-do
-    python3 src/ml/${component} --config config/development/${component}_config.json > /dev/null &
-end
+python3 src/ml/hawkes --config config/development/hawkes_config.json --partition 0 > /dev/null &
+python3 src/ml/hawkes --config config/development/hawkes_config.json --partition 1 > /dev/null &
+python3 src/ml/predictor --config config/development/hawkes_config.json --obs-window 600 partition > /dev/null &
+python3 src/ml/predictor --config config/development/hawkes_config.json --obs-window 1200 partition > /dev/null &
+python3 src/ml/learner --config config/development/learner_config.json > /dev/null &
 ```
 The logs will be saved in the `logs/` folder. Alternatively, you can run the scripts on separate terminals on foreground to monitor the execution.
 
