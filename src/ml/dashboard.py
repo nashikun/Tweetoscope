@@ -22,7 +22,7 @@ def main():
     consumer = KafkaConsumer(
         config["consumer_topic"],
         bootstrap_servers=config["bootstrap_servers"],
-        value_deserializer=lambda v: json.loads(v).decode('utf-8')
+        value_deserializer=lambda v: json.loads(v.decode('utf-8'))
         )
 
     for message in consumer:
@@ -31,7 +31,7 @@ def main():
         tweet_id = message.value["cid"]
         T_obs = message.value["T_obs"]
 
-        if n_tot > config.retweet_limit:
+        if n_tot > config["retweet_limit"]:
             print("Tweet {} may reach an important size, {: .3f} retweets predicted with {}s of observation".format(tweet_id, n_tot, T_obs))
 
 if __name__ == '__main__':

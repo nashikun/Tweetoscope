@@ -94,7 +94,6 @@ data:
             ThreadId:
             level:
             File:
-            Message:
             Line:
 
       static_configs:

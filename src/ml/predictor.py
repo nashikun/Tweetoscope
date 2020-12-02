@@ -85,13 +85,9 @@ def main():
 
     sizes = defaultdict(dict)
     forest_inputs = {}
-
-    #time_to_id = {time:idx for idx, time in enumerate(config["times"])}
-
-    logger = get_logger('predictor', broker_list=config["bootstrap_servers"], debug=True)
+    logger = get_logger(f'predictor-{partition}', broker_list=config["bootstrap_servers"], debug=True)
 
     for message in consumer:
-
         try:
             mess = message.value.decode().replace("'", '"')
             mess = json.loads(mess)
@@ -175,3 +171,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

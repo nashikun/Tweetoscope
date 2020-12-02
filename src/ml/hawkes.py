@@ -142,7 +142,7 @@ def main():
 
     args = init_parser()
     config = init_config(args)
-    logger = get_logger('hawkes', broker_list=config["bootstrap_servers"], debug=True)
+    logger = get_logger(f'hawkes-{config["partition"]}', broker_list=config["bootstrap_servers"], debug=True)
     consumer = KafkaConsumer(bootstrap_servers=config["bootstrap_servers"])
     consumer.assign([TopicPartition(config["consumer_topic"], config["partition"])])
     producer = KafkaProducer(bootstrap_servers=config["bootstrap_servers"], value_serializer=lambda v: json.dumps(v).encode("utf-8"), key_serializer=lambda v: json.dumps(v).encode("utf-8"))
@@ -179,7 +179,7 @@ def main():
         
         producer.send(config["producer_topic"], key=T_obs, value=messfinal, partition=config["partition"])
 
-        logger.info("Predicted params p = {: .3f} and beta = {: .3f} for tweet {} at time {}".format(p_est, beta_est, tweet_id, T_obs))
+        logger.info("Predicted params p = {: .3f} and beta = {: .3f} for tweet {} at time {} on partition: {}".format(p_est, beta_est, tweet_id, T_obs, config["partition"]))
 
 if __name__ == '__main__':
     main()
