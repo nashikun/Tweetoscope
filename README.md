@@ -1,4 +1,8 @@
 # Tweetoscope_2020_06
+
+# Note
+This repo has been imported from a private gitlab without changes for reference, meaning the docker images and releases aren't available. you could however build them locally and update the path in the corresponding k8s deployments
+
 ## Table of contents
 
 <details open="open">
